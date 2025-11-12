@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		58C4E427134E4403AC7E78C6 /* Privy in Frameworks */ = {isa = PBXBuildFile; productRef = 2C9B3DFB1F5443F0AE14FC26 /* Privy */; };
-		45F07DEF3EAE42D4A6D0D5F8 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 45F07DEE3EAE42D4A6D0D5F8 /* Info.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -29,7 +28,6 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		45F07DEE3EAE42D4A6D0D5F8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = "Amigo Gold/Resources/Info.plist"; sourceTree = "<group>"; };
 		2CD06615193545B5AB62FA17 /* Dev.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Dev.xcconfig; path = "Amigo Gold/Configurations/Dev.xcconfig"; sourceTree = "<group>"; };
 		2EDB9B96681645C6BE7B00E1 /* Prod.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Prod.xcconfig; path = "Amigo Gold/Configurations/Prod.xcconfig"; sourceTree = "<group>"; };
 		D5D384412EC489E600956DF2 /* Amigo Gold.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Amigo Gold.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -225,14 +223,6 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		D5D3843F2EC489E600956DF2 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				45F07DEF3EAE42D4A6D0D5F8 /* Info.plist in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		D5D3844E2EC489E800956DF2 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
