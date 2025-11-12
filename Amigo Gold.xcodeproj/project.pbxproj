@@ -1,0 +1,620 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		58C4E427134E4403AC7E78C6 /* Privy in Frameworks */ = {isa = PBXBuildFile; productRef = 2C9B3DFB1F5443F0AE14FC26 /* Privy */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		D5D384512EC489E800956DF2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D5D384392EC489E600956DF2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D5D384402EC489E600956DF2;
+			remoteInfo = "Amigo Gold";
+		};
+		D5D3845B2EC489E800956DF2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D5D384392EC489E600956DF2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D5D384402EC489E600956DF2;
+			remoteInfo = "Amigo Gold";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		2CD06615193545B5AB62FA17 /* Dev.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Dev.xcconfig; path = "Amigo Gold/Configurations/Dev.xcconfig"; sourceTree = "<group>"; };
+		2EDB9B96681645C6BE7B00E1 /* Prod.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Prod.xcconfig; path = "Amigo Gold/Configurations/Prod.xcconfig"; sourceTree = "<group>"; };
+		D5D384412EC489E600956DF2 /* Amigo Gold.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Amigo Gold.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		D5D384502EC489E800956DF2 /* Amigo GoldTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Amigo GoldTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		D5D3845A2EC489E800956DF2 /* Amigo GoldUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Amigo GoldUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		D5D384432EC489E600956DF2 /* Amigo Gold */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Amigo Gold";
+			sourceTree = "<group>";
+		};
+		D5D384532EC489E800956DF2 /* Amigo GoldTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Amigo GoldTests";
+			sourceTree = "<group>";
+		};
+		D5D3845D2EC489E800956DF2 /* Amigo GoldUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Amigo GoldUITests";
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D5D3843E2EC489E600956DF2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				58C4E427134E4403AC7E78C6 /* Privy in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D5D3844D2EC489E800956DF2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D5D384572EC489E800956DF2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		D5D384382EC489E600956DF2 = {
+			isa = PBXGroup;
+			children = (
+				D5D384432EC489E600956DF2 /* Amigo Gold */,
+				D5D384532EC489E800956DF2 /* Amigo GoldTests */,
+				D5D3845D2EC489E800956DF2 /* Amigo GoldUITests */,
+				D5D384422EC489E600956DF2 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		D5D384422EC489E600956DF2 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D5D384412EC489E600956DF2 /* Amigo Gold.app */,
+				D5D384502EC489E800956DF2 /* Amigo GoldTests.xctest */,
+				D5D3845A2EC489E800956DF2 /* Amigo GoldUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		D5D384402EC489E600956DF2 /* Amigo Gold */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D5D384642EC489E800956DF2 /* Build configuration list for PBXNativeTarget "Amigo Gold" */;
+			buildPhases = (
+				D5D3843D2EC489E600956DF2 /* Sources */,
+				D5D3843E2EC489E600956DF2 /* Frameworks */,
+				D5D3843F2EC489E600956DF2 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				D5D384432EC489E600956DF2 /* Amigo Gold */,
+			);
+			name = "Amigo Gold";
+			packageProductDependencies = (
+				2C9B3DFB1F5443F0AE14FC26 /* Privy */,
+			);
+			productName = "Amigo Gold";
+			productReference = D5D384412EC489E600956DF2 /* Amigo Gold.app */;
+			productType = "com.apple.product-type.application";
+		};
+		D5D3844F2EC489E800956DF2 /* Amigo GoldTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D5D384672EC489E800956DF2 /* Build configuration list for PBXNativeTarget "Amigo GoldTests" */;
+			buildPhases = (
+				D5D3844C2EC489E800956DF2 /* Sources */,
+				D5D3844D2EC489E800956DF2 /* Frameworks */,
+				D5D3844E2EC489E800956DF2 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D5D384522EC489E800956DF2 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				D5D384532EC489E800956DF2 /* Amigo GoldTests */,
+			);
+			name = "Amigo GoldTests";
+			packageProductDependencies = (
+			);
+			productName = "Amigo GoldTests";
+			productReference = D5D384502EC489E800956DF2 /* Amigo GoldTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		D5D384592EC489E800956DF2 /* Amigo GoldUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D5D3846A2EC489E800956DF2 /* Build configuration list for PBXNativeTarget "Amigo GoldUITests" */;
+			buildPhases = (
+				D5D384562EC489E800956DF2 /* Sources */,
+				D5D384572EC489E800956DF2 /* Frameworks */,
+				D5D384582EC489E800956DF2 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D5D3845C2EC489E800956DF2 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				D5D3845D2EC489E800956DF2 /* Amigo GoldUITests */,
+			);
+			name = "Amigo GoldUITests";
+			packageProductDependencies = (
+			);
+			productName = "Amigo GoldUITests";
+			productReference = D5D3845A2EC489E800956DF2 /* Amigo GoldUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D5D384392EC489E600956DF2 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2600;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+					D5D384402EC489E600956DF2 = {
+						CreatedOnToolsVersion = 26.0;
+					};
+					D5D3844F2EC489E800956DF2 = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = D5D384402EC489E600956DF2;
+					};
+					D5D384592EC489E800956DF2 = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = D5D384402EC489E600956DF2;
+					};
+				};
+			};
+			buildConfigurationList = D5D3843C2EC489E600956DF2 /* Build configuration list for PBXProject "Amigo Gold" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = D5D384382EC489E600956DF2;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = D5D384422EC489E600956DF2 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			packageReferences = (
+				7A6D26B74F9D46BF8CD89B90 /* XCRemoteSwiftPackageReference "privy-ios" */,
+			);
+			targets = (
+				D5D384402EC489E600956DF2 /* Amigo Gold */,
+				D5D3844F2EC489E800956DF2 /* Amigo GoldTests */,
+				D5D384592EC489E800956DF2 /* Amigo GoldUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		D5D3843F2EC489E600956DF2 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D5D3844E2EC489E800956DF2 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D5D384582EC489E800956DF2 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D5D3843D2EC489E600956DF2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D5D3844C2EC489E800956DF2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D5D384562EC489E800956DF2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		D5D384522EC489E800956DF2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D5D384402EC489E600956DF2 /* Amigo Gold */;
+			targetProxy = D5D384512EC489E800956DF2 /* PBXContainerItemProxy */;
+		};
+		D5D3845C2EC489E800956DF2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D5D384402EC489E600956DF2 /* Amigo Gold */;
+			targetProxy = D5D3845B2EC489E800956DF2 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		D5D384622EC489E800956DF2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 495XWEJ924;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		D5D384632EC489E800956DF2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 495XWEJ924;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		D5D384652EC489E800956DF2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2CD06615193545B5AB62FA17 /* Dev.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 495XWEJ924;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Amigo Gold/Resources/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "transak.Amigo-Gold";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		D5D384662EC489E800956DF2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2EDB9B96681645C6BE7B00E1 /* Prod.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 495XWEJ924;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Amigo Gold/Resources/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "transak.Amigo-Gold";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		D5D384682EC489E800956DF2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 495XWEJ924;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "transak.Amigo-GoldTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Amigo Gold.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Amigo Gold";
+				XROS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		D5D384692EC489E800956DF2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 495XWEJ924;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "transak.Amigo-GoldTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Amigo Gold.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Amigo Gold";
+				XROS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
+		D5D3846B2EC489E800956DF2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 495XWEJ924;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "transak.Amigo-GoldUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_TARGET_NAME = "Amigo Gold";
+				XROS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		D5D3846C2EC489E800956DF2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 495XWEJ924;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "transak.Amigo-GoldUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_TARGET_NAME = "Amigo Gold";
+				XROS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+	7A6D26B74F9D46BF8CD89B90 /* XCRemoteSwiftPackageReference "privy-ios" */ = {
+		isa = XCRemoteSwiftPackageReference;
+		repositoryURL = "https://github.com/privy-io/privy-ios";
+		requirement = {
+			branch = main;
+			kind = branch;
+		};
+	};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+	2C9B3DFB1F5443F0AE14FC26 /* Privy */ = {
+		isa = XCSwiftPackageProductDependency;
+		package = 7A6D26B74F9D46BF8CD89B90 /* XCRemoteSwiftPackageReference "privy-ios" */;
+		productName = Privy;
+	};
+/* End XCSwiftPackageProductDependency section */
+
+/* Begin XCConfigurationList section */
+		D5D3843C2EC489E600956DF2 /* Build configuration list for PBXProject "Amigo Gold" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D5D384622EC489E800956DF2 /* Debug */,
+				D5D384632EC489E800956DF2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D5D384642EC489E800956DF2 /* Build configuration list for PBXNativeTarget "Amigo Gold" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D5D384652EC489E800956DF2 /* Debug */,
+				D5D384662EC489E800956DF2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D5D384672EC489E800956DF2 /* Build configuration list for PBXNativeTarget "Amigo GoldTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D5D384682EC489E800956DF2 /* Debug */,
+				D5D384692EC489E800956DF2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D5D3846A2EC489E800956DF2 /* Build configuration list for PBXNativeTarget "Amigo GoldUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D5D3846B2EC489E800956DF2 /* Debug */,
+				D5D3846C2EC489E800956DF2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = D5D384392EC489E600956DF2 /* Project object */;
+}

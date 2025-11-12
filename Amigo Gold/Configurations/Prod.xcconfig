@@ -1,0 +1,7 @@
+APP_ENVIRONMENT = production
+API_BASE_URL = https://api.amigogold.com
+PRIVY_APP_ID = cmhvskgil00nvky0cb6rjejrs
+PRIVY_APP_CLIENT_ID = client-WY6SX56F52MtzFqDzgL6jxdNAfpyL3kdY77zMdG4FgS2J
+PRIVY_JWKS_URL = https://auth.privy.io/api/v1/apps/cmhvskgil00nvky0cb6rjejrs/jwks.json
+DEEP_LINK_SCHEME = amigogold
+DEFAULT_OAUTH_PROVIDER = google
