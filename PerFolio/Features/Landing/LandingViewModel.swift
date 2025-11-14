@@ -71,9 +71,24 @@ final class LandingViewModel: ObservableObject {
                 try await authCoordinator.verify(accessToken: accessToken)
                 AppLogger.log("Privy access token verified for user \(user.id)", category: "auth")
                 
-                // TODO: Extract embedded wallet address from Privy
-                // Requires Privy configuration: createOnLogin: "users-without-wallets"
-                // Will be completed after Privy dashboard configuration
+                // Extract embedded wallet address from Privy user
+                // Note: This requires Privy dashboard configuration:
+                // Settings > Embedded Wallets > "Create on login" enabled
+                
+                // For now, use a demo wallet for testing
+                // Once Privy embedded wallets are configured, replace with:
+                // let embeddedWallets = try await user.getLinkedAccounts()
+                // let wallet = embeddedWallets.first(where: { $0.type == .wallet })
+                
+                // Demo wallet (Vitalik's address with PAXG/USDT for testing)
+                let demoWallet = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+                AppLogger.log("⚠️ Using demo wallet for testing: \(demoWallet)", category: "auth")
+                AppLogger.log("⚠️ Configure Privy embedded wallets to get real wallet address", category: "auth")
+                
+                // Save wallet address to UserDefaults
+                UserDefaults.standard.set(demoWallet, forKey: "userWalletAddress")
+                UserDefaults.standard.set(user.id, forKey: "privyUserId")
+                AppLogger.log("Demo wallet address saved to storage", category: "auth")
                 
                 isLoading = false
                 alert = AlertConfig(

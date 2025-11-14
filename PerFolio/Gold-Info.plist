@@ -79,5 +79,7 @@
 	<string>$(DEEP_LINK_SCHEME)</string>
 	<key>AGDefaultOAuthProvider</key>
 	<string>$(DEFAULT_OAUTH_PROVIDER)</string>
+	<key>AGAlchemyAPIKey</key>
+	<string>$(ALCHEMY_API_KEY)</string>
 </dict>
 </plist>

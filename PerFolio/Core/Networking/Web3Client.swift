@@ -107,13 +107,17 @@ actor Web3Client {
     private let session: URLSession
     
     init(
-        primaryRPC: String = "https://eth-mainnet.g.alchemy.com/v2/demo", // Replace with your Alchemy key
+        primaryRPC: String? = nil,
         fallbackRPC: String = "https://ethereum.publicnode.com",
         session: URLSession = .shared
     ) {
-        self.primaryRPC = primaryRPC
+        // Read Alchemy API key from Info.plist
+        let alchemyKey = Bundle.main.object(forInfoDictionaryKey: "AGAlchemyAPIKey") as? String ?? "demo"
+        self.primaryRPC = primaryRPC ?? "https://eth-mainnet.g.alchemy.com/v2/\(alchemyKey)"
         self.fallbackRPC = fallbackRPC
         self.session = session
+        
+        AppLogger.log("Web3Client initialized with Alchemy key: \(alchemyKey.prefix(4))...", category: "web3")
     }
     
     /// Make a generic RPC call with automatic fallback

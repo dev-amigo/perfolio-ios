@@ -26,9 +26,13 @@ struct PerFolioDashboardView: View {
             }
         }
         .onAppear {
-            // TODO: Get wallet address from user session/profile
-            // For testing, you can set a demo address:
-            // viewModel.setWalletAddress("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb")
+            // Load wallet address from storage
+            if let savedAddress = UserDefaults.standard.string(forKey: "userWalletAddress") {
+                AppLogger.log("Loading saved wallet address: \(savedAddress)", category: "dashboard")
+                viewModel.setWalletAddress(savedAddress)
+            } else {
+                AppLogger.log("⚠️ No wallet address found in storage. User may need to re-login.", category: "dashboard")
+            }
         }
     }
     
