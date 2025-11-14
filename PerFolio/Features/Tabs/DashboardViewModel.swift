@@ -55,6 +55,10 @@ final class DashboardViewModel: ObservableObject {
         
         // Automatically fetch balances when wallet is set
         Task {
+            // Refresh Privy REST API client (in case wallet ID is now available)
+            await web3Client.refreshPrivyClient()
+            
+            // Fetch balances
             await fetchBalances()
         }
     }

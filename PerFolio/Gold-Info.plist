@@ -75,8 +75,8 @@
 	<string>$(PRIVY_APP_CLIENT_ID)</string>
 	<key>AGPrivyJWKSURL</key>
 	<string>$(PRIVY_JWKS_URL)</string>
-	<key>AGPrivyRPCURL</key>
-	<string>$(PRIVY_RPC_URL)</string>
+	<key>AGPrivyAPIBaseURL</key>
+	<string>$(PRIVY_API_BASE_URL)</string>
 	<key>AGEthereumRPCFallback</key>
 	<string>$(ETHEREUM_RPC_FALLBACK)</string>
 	<key>AGDeepLinkScheme</key>
