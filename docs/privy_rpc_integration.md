@@ -1,8 +1,18 @@
-# Privy RPC Integration Guide
+# Privy Gas Sponsorship & RPC Integration Guide
 
-## 🎯 Why Use Privy RPC?
+## 📌 Update: Privy SDK for Gas Sponsorship
 
-We've switched from Alchemy to **Privy's RPC infrastructure** for several key benefits:
+**Important Discovery:** Privy's gas sponsorship works through their **iOS SDK**, not a direct HTTP RPC endpoint. 
+
+### Current Setup (Phase 2):
+- **Read Operations** (balance fetching): Using **LlamaRPC** (`https://eth.llamarpc.com`)
+- **Gas-Sponsored Transactions** (Phase 3): Will use **Privy iOS SDK**
+
+---
+
+## 🎯 Why Use Privy for Gas Sponsorship?
+
+We're using **Privy's embedded wallet SDK** for gas sponsorship on transactions:
 
 ### ✅ **1. Gas Sponsorship (Gasless Transactions)**
 - **Your app pays for gas fees**, not your users
@@ -31,47 +41,49 @@ We've switched from Alchemy to **Privy's RPC infrastructure** for several key be
 
 ## 🔧 How It Works
 
-### **Configuration**
+### **Current RPC Configuration (Phase 2)**
 
 **Dev.xcconfig / Prod.xcconfig:**
 ```
-PRIVY_RPC_URL = https://rpc.privy.io/cmhenc7hj004ijy0c311hbf2z
+ETHEREUM_RPC_URL = https://eth.llamarpc.com
 ```
 
 **Gold-Info.plist:**
 ```xml
-<key>AGPrivyRPCURL</key>
-<string>$(PRIVY_RPC_URL)</string>
+<key>AGEthereumRPCURL</key>
+<string>$(ETHEREUM_RPC_URL)</string>
 ```
 
 **Web3Client.swift:**
 ```swift
 init() {
-    let privyRPCURL = Bundle.main.object(forInfoDictionaryKey: "AGPrivyRPCURL") as? String
-    self.primaryRPC = privyRPCURL ?? fallbackRPC
-    // Privy RPC with gas sponsorship enabled! 🎉
+    let ethereumRPCURL = Bundle.main.object(forInfoDictionaryKey: "AGEthereumRPCURL") as? String
+    self.primaryRPC = ethereumRPCURL ?? fallbackRPC
+    // Using LlamaRPC for fast, reliable balance fetching
 }
 ```
 
 ---
 
-## 📊 RPC Endpoint Structure
+## 📊 RPC Setup
 
-**Format:**
-```
-https://rpc.privy.io/{PRIVY_APP_ID}
-```
+### **Phase 2: Read Operations** ✅ (Current)
+**Primary RPC:** LlamaRPC (`https://eth.llamarpc.com`)
+- Fast and reliable
+- Free tier with generous limits  
+- Perfect for balance checking
+- No API key required
 
-**Example:**
-```
-https://rpc.privy.io/cmhenc7hj004ijy0c311hbf2z
-```
+**Fallback RPC:** Public Ethereum Node (`https://ethereum.publicnode.com`)
+- Automatic fallback if primary fails
+- Ensures high availability
 
-This endpoint:
-- Supports all standard Ethereum JSON-RPC methods
-- Includes automatic gas sponsorship for transactions
-- Connects to Ethereum Mainnet by default
-- Has automatic failover and high availability
+### **Phase 3: Gas-Sponsored Transactions** (Next)
+**Privy iOS SDK Integration:**
+- Transaction signing through embedded wallet
+- Gas fees automatically sponsored by your Privy app
+- User never needs ETH
+- Configured in Privy dashboard (not via HTTP endpoint)
 
 ---
 
