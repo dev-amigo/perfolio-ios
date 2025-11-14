@@ -134,7 +134,17 @@ actor PrivyRPCClient {
         
         // Log response for debugging
         if let responseString = String(data: data, encoding: .utf8) {
-            AppLogger.log("Privy RPC response (\(httpResponse.statusCode)): \(responseString.prefix(200))...", category: "web3")
+            AppLogger.log("Privy RPC response (\(httpResponse.statusCode)): \(responseString)", category: "web3")
+        } else {
+            AppLogger.log("Privy RPC response (\(httpResponse.statusCode)): [binary data]", category: "web3")
+        }
+        
+        // Log full request for 405 errors
+        if httpResponse.statusCode == 405 {
+            AppLogger.log("⚠️ HTTP 405 Method Not Allowed", category: "web3")
+            AppLogger.log("   Endpoint: \(endpoint)", category: "web3")
+            AppLogger.log("   Method: POST", category: "web3")
+            AppLogger.log("   Headers: Authorization: Bearer [token], Content-Type: application/json", category: "web3")
         }
         
         guard (200...299).contains(httpResponse.statusCode) else {
