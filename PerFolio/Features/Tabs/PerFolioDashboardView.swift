@@ -2,13 +2,16 @@ import SwiftUI
 
 struct PerFolioDashboardView: View {
     @EnvironmentObject private var themeManager: ThemeManager
+    @StateObject private var viewModel = DashboardViewModel()
     @State private var collateralAmount: String = ""
     @State private var borrowAmount: String = ""
+    @State private var showCopiedToast = false
     
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
                 goldenHeroCard
+                walletConnectionCard
                 yourGoldHoldingsCard
                 getInstantLoanCard
             }
@@ -16,6 +19,17 @@ struct PerFolioDashboardView: View {
             .padding(.vertical, 24)
         }
         .background(themeManager.perfolioTheme.primaryBackground.ignoresSafeArea())
+        .overlay(alignment: .top) {
+            if showCopiedToast {
+                copiedToast
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .onAppear {
+            // TODO: Get wallet address from user session/profile
+            // For testing, you can set a demo address:
+            // viewModel.setWalletAddress("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb")
+        }
     }
     
     // MARK: - Golden Hero Card
@@ -39,13 +53,19 @@ struct PerFolioDashboardView: View {
                 .foregroundStyle(.white)
             
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text("$0.00")
-                    .font(.system(size: 42, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
+                if case .loading = viewModel.loadingState {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                } else {
+                    Text(viewModel.totalPortfolioValue)
+                        .font(.system(size: 42, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                }
                 
-                Text("+0.0%")
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
-                    .foregroundStyle(themeManager.perfolioTheme.success)
+                // TODO: Calculate 24h change
+                // Text("+0.0%")
+                //     .font(.system(size: 16, weight: .semibold, design: .rounded))
+                //     .foregroundStyle(themeManager.perfolioTheme.success)
             }
         }
     }
@@ -76,15 +96,130 @@ struct PerFolioDashboardView: View {
         .padding(.vertical, 8)
     }
     
+    // MARK: - Wallet Connection Card
+    
+    private var walletConnectionCard: some View {
+        PerFolioCard {
+            VStack(spacing: 16) {
+                HStack {
+                    Image(systemName: "wallet.pass.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                    
+                    Text("Wallet")
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                    
+                    Spacer()
+                    
+                    // Connection status badge
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(viewModel.walletBadgeColor)
+                            .frame(width: 8, height: 8)
+                        
+                        Text(viewModel.walletBadgeText)
+                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(themeManager.perfolioTheme.primaryBackground)
+                    )
+                }
+                
+                if viewModel.isWalletConnected {
+                    Divider()
+                        .background(themeManager.perfolioTheme.border)
+                    
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Deposit Address")
+                                .font(.system(size: 13, weight: .medium, design: .rounded))
+                                .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                            
+                            Text(viewModel.truncatedAddress)
+                                .font(.system(size: 15, weight: .semibold, design: .monospaced))
+                                .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                        }
+                        
+                        Spacer()
+                        
+                        Button {
+                            viewModel.copyAddressToClipboard()
+                            withAnimation {
+                                showCopiedToast = true
+                            }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                withAnimation {
+                                    showCopiedToast = false
+                                }
+                            }
+                        } label: {
+                            Image(systemName: "doc.on.doc.fill")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                                .padding(10)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(themeManager.perfolioTheme.primaryBackground)
+                                )
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    private var copiedToast: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 14))
+                .foregroundStyle(themeManager.perfolioTheme.success)
+            
+            Text("Address copied!")
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(themeManager.perfolioTheme.secondaryBackground)
+                .shadow(color: .black.opacity(0.3), radius: 10, y: 5)
+        )
+        .padding(.top, 60)
+    }
+    
     // MARK: - Your Gold Holdings Card
     
     private var yourGoldHoldingsCard: some View {
         PerFolioCard {
             VStack(alignment: .leading, spacing: 16) {
-                PerFolioSectionHeader(
-                    icon: "bitcoinsign.circle.fill",
-                    title: "Your Gold Holdings"
-                )
+                HStack {
+                    PerFolioSectionHeader(
+                        icon: "bitcoinsign.circle.fill",
+                        title: "Your Gold Holdings"
+                    )
+                    
+                    Spacer()
+                    
+                    if case .loading = viewModel.loadingState {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: themeManager.perfolioTheme.tintColor))
+                            .scaleEffect(0.8)
+                    } else if case .failed = viewModel.loadingState {
+                        Button {
+                            viewModel.refreshBalances()
+                        } label: {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                        }
+                    }
+                }
                 
                 Divider()
                     .background(themeManager.perfolioTheme.border)
@@ -92,15 +227,22 @@ struct PerFolioDashboardView: View {
                 // Balance rows
                 PerFolioBalanceRow(
                     tokenSymbol: "PAXG",
-                    tokenAmount: "0.00",
-                    usdValue: "$0.00"
+                    tokenAmount: viewModel.paxgFormattedBalance,
+                    usdValue: viewModel.paxgUSDValue
                 )
                 
                 PerFolioBalanceRow(
                     tokenSymbol: "USDT",
-                    tokenAmount: "0.00",
-                    usdValue: "$0.00"
+                    tokenAmount: viewModel.usdtFormattedBalance,
+                    usdValue: viewModel.usdtUSDValue
                 )
+                
+                if case .failed(let error) = viewModel.loadingState {
+                    PerFolioInfoBanner(
+                        "Failed to load balances: \(error.localizedDescription)",
+                        style: .danger
+                    )
+                }
                 
                 Divider()
                     .background(themeManager.perfolioTheme.border)

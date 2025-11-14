@@ -70,6 +70,11 @@ final class LandingViewModel: ObservableObject {
                 let accessToken = try await user.getAccessToken()
                 try await authCoordinator.verify(accessToken: accessToken)
                 AppLogger.log("Privy access token verified for user \(user.id)", category: "auth")
+                
+                // TODO: Extract embedded wallet address from Privy
+                // Requires Privy configuration: createOnLogin: "users-without-wallets"
+                // Will be completed after Privy dashboard configuration
+                
                 isLoading = false
                 alert = AlertConfig(
                     title: L10n.string(.landingAlertSuccessTitle),
