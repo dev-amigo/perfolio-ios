@@ -42,8 +42,11 @@ actor PrivyTokenVerifier {
         let kid: String
         let alg: String?
         let use: String?
-        let n: String
-        let e: String
+        let crv: String?  // For EC keys
+        let x: String?    // For EC keys
+        let y: String?    // For EC keys
+        let n: String?    // For RSA keys
+        let e: String?    // For RSA keys
     }
 
     private struct JWTHeader: Decodable {
@@ -80,7 +83,8 @@ actor PrivyTokenVerifier {
         let header = try JSONDecoder().decode(JWTHeader.self, from: headerData)
         AppLogger.log("Token header - alg: \(header.alg), kid: \(header.kid)", category: "auth")
         
-        guard header.alg.uppercased() == "RS256" else {
+        let algorithm = header.alg.uppercased()
+        guard algorithm == "RS256" || algorithm == "ES256" else {
             AppLogger.log("Token verification failed: Unsupported algorithm '\(header.alg)'", category: "auth")
             throw PrivyTokenVerifierError.unsupportedAlgorithm
         }
@@ -88,12 +92,21 @@ actor PrivyTokenVerifier {
         let jwk = try await key(for: header.kid)
         AppLogger.log("Found JWK for kid: \(header.kid), alg: \(jwk.alg ?? "none"), kty: \(jwk.kty)", category: "auth")
         
-        let publicKey = try buildPublicKey(from: jwk)
+        let publicKey = try buildPublicKey(from: jwk, algorithm: algorithm)
         AppLogger.log("Public key created successfully", category: "auth")
 
         let signedInput = Data("\(segments[0]).\(segments[1])".utf8)
-        let isSupported = SecKeyIsAlgorithmSupported(publicKey, .verify, .rsaSignatureMessagePKCS1v15SHA256)
-        AppLogger.log("RSA algorithm supported: \(isSupported)", category: "auth")
+        
+        // Choose the right verification algorithm based on token type
+        let secAlgorithm: SecKeyAlgorithm
+        if algorithm == "ES256" {
+            secAlgorithm = .ecdsaSignatureMessageX962SHA256
+        } else {
+            secAlgorithm = .rsaSignatureMessagePKCS1v15SHA256
+        }
+        
+        let isSupported = SecKeyIsAlgorithmSupported(publicKey, .verify, secAlgorithm)
+        AppLogger.log("\(algorithm) algorithm supported: \(isSupported)", category: "auth")
         
         guard isSupported else {
             AppLogger.log("Token verification failed: Algorithm not supported by SecKey", category: "auth")
@@ -103,7 +116,7 @@ actor PrivyTokenVerifier {
         var error: Unmanaged<CFError>?
         let verified = SecKeyVerifySignature(
             publicKey,
-            .rsaSignatureMessagePKCS1v15SHA256,
+            secAlgorithm,
             signedInput as CFData,
             signatureData as CFData,
             &error
@@ -151,37 +164,72 @@ actor PrivyTokenVerifier {
         lastRefresh = Date()
     }
 
-    private func buildPublicKey(from jwk: JWK) throws -> SecKey {
-        if let algorithm = jwk.alg, algorithm.uppercased() != "RS256" {
-            AppLogger.log("buildPublicKey failed: JWK algorithm '\(algorithm)' is not RS256", category: "auth")
+    private func buildPublicKey(from jwk: JWK, algorithm: String) throws -> SecKey {
+        let keyType = jwk.kty.uppercased()
+        
+        if keyType == "EC" {
+            // Elliptic Curve key (ES256)
+            AppLogger.log("Building EC public key for ES256", category: "auth")
+            guard let crv = jwk.crv, crv == "P-256" else {
+                AppLogger.log("buildPublicKey failed: EC curve '\(jwk.crv ?? "none")' not supported", category: "auth")
+                throw PrivyTokenVerifierError.unsupportedAlgorithm
+            }
+            guard
+                let xData = jwk.x.flatMap({ Data(base64URLEncoded: $0) }),
+                let yData = jwk.y.flatMap({ Data(base64URLEncoded: $0) })
+            else {
+                AppLogger.log("buildPublicKey failed: Unable to decode EC x or y coordinates", category: "auth")
+                throw PrivyTokenVerifierError.decodingFailed
+            }
+            
+            // EC public key format: 0x04 + x-coordinate + y-coordinate
+            var keyData = Data([0x04])
+            keyData.append(xData)
+            keyData.append(yData)
+            
+            let attributes: [String: Any] = [
+                kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom,
+                kSecAttrKeyClass as String: kSecAttrKeyClassPublic,
+                kSecAttrKeySizeInBits as String: 256
+            ]
+            
+            guard let key = SecKeyCreateWithData(keyData as CFData, attributes as CFDictionary, nil) else {
+                AppLogger.log("buildPublicKey failed: SecKeyCreateWithData returned nil for EC key", category: "auth")
+                throw PrivyTokenVerifierError.keyCreationFailed
+            }
+            
+            AppLogger.log("buildPublicKey succeeded: Created EC public key", category: "auth")
+            return key
+            
+        } else if keyType == "RSA" {
+            // RSA key (RS256)
+            AppLogger.log("Building RSA public key for RS256", category: "auth")
+            guard
+                let modulus = jwk.n.flatMap({ Data(base64URLEncoded: $0) }),
+                let exponent = jwk.e.flatMap({ Data(base64URLEncoded: $0) })
+            else {
+                AppLogger.log("buildPublicKey failed: Unable to decode RSA modulus or exponent", category: "auth")
+                throw PrivyTokenVerifierError.decodingFailed
+            }
+
+            let keyData = rsaPublicKeyData(modulus: modulus, exponent: exponent)
+            let attributes: [String: Any] = [
+                kSecAttrKeyType as String: kSecAttrKeyTypeRSA,
+                kSecAttrKeyClass as String: kSecAttrKeyClassPublic,
+                kSecAttrKeySizeInBits as String: modulus.count * 8,
+            ]
+
+            guard let key = SecKeyCreateWithData(keyData as CFData, attributes as CFDictionary, nil) else {
+                AppLogger.log("buildPublicKey failed: SecKeyCreateWithData returned nil for RSA key", category: "auth")
+                throw PrivyTokenVerifierError.keyCreationFailed
+            }
+
+            AppLogger.log("buildPublicKey succeeded: Created RSA public key", category: "auth")
+            return key
+        } else {
+            AppLogger.log("buildPublicKey failed: Key type '\(keyType)' not supported", category: "auth")
             throw PrivyTokenVerifierError.unsupportedAlgorithm
         }
-        guard jwk.kty.uppercased() == "RSA" else {
-            AppLogger.log("buildPublicKey failed: JWK key type '\(jwk.kty)' is not RSA", category: "auth")
-            throw PrivyTokenVerifierError.unsupportedAlgorithm
-        }
-        guard
-            let modulus = Data(base64URLEncoded: jwk.n),
-            let exponent = Data(base64URLEncoded: jwk.e)
-        else {
-            AppLogger.log("buildPublicKey failed: Unable to decode modulus or exponent", category: "auth")
-            throw PrivyTokenVerifierError.decodingFailed
-        }
-
-        let keyData = rsaPublicKeyData(modulus: modulus, exponent: exponent)
-        let attributes: [String: Any] = [
-            kSecAttrKeyType as String: kSecAttrKeyTypeRSA,
-            kSecAttrKeyClass as String: kSecAttrKeyClassPublic,
-            kSecAttrKeySizeInBits as String: modulus.count * 8,
-        ]
-
-        guard let key = SecKeyCreateWithData(keyData as CFData, attributes as CFDictionary, nil) else {
-            AppLogger.log("buildPublicKey failed: SecKeyCreateWithData returned nil", category: "auth")
-            throw PrivyTokenVerifierError.keyCreationFailed
-        }
-
-        AppLogger.log("buildPublicKey succeeded: Created RSA public key", category: "auth")
-        return key
     }
 
     private func rsaPublicKeyData(modulus: Data, exponent: Data) -> Data {
