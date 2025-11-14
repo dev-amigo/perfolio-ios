@@ -154,12 +154,16 @@ actor PrivyTokenVerifier {
             return
         }
 
+        AppLogger.log("Fetching JWKS from: \(configuration.privyJWKSURL.absoluteString)", category: "auth")
+        
         let (data, response) = try await session.data(from: configuration.privyJWKSURL)
         guard let httpResponse = response as? HTTPURLResponse, (200 ... 299).contains(httpResponse.statusCode) else {
+            AppLogger.log("JWKS fetch failed: HTTP status \((response as? HTTPURLResponse)?.statusCode ?? -1)", category: "auth")
             throw PrivyTokenVerifierError.jwksFetchFailed
         }
 
         let jwks = try JSONDecoder().decode(JWKSResponse.self, from: data)
+        AppLogger.log("JWKS fetched successfully: \(jwks.keys.count) keys", category: "auth")
         keyCache = Dictionary(uniqueKeysWithValues: jwks.keys.map { ($0.kid, $0) })
         lastRefresh = Date()
     }
