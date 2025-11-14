@@ -1,7 +1,7 @@
 APP_ENVIRONMENT = production
-API_BASE_URL = https://perfolio.ai
+API_BASE_URL = https:/$()/perfolio.ai
 PRIVY_APP_ID = cmhenc7hj004ijy0c311hbf2z
 PRIVY_APP_CLIENT_ID = client-WY6STfJ4XQDcAbqTXDZZ4buZZPMDma37uaohXSTE77Dqq
-PRIVY_JWKS_URL = https://auth.privy.io/api/v1/apps/cmhenc7hj004ijy0c311hbf2z/jwks.json
+PRIVY_JWKS_URL = https:/$()/auth.privy.io/api/v1/apps/cmhenc7hj004ijy0c311hbf2z/jwks.json
 DEEP_LINK_SCHEME = perfolio
 DEFAULT_OAUTH_PROVIDER = email
