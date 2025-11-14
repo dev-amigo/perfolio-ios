@@ -2,27 +2,43 @@ import SwiftUI
 
 struct DepositBuyView: View {
     @EnvironmentObject private var themeManager: ThemeManager
-    @State private var inrAmount: String = ""
-    @State private var selectedPaymentMethod: PaymentMethod = .upi
-    
-    enum PaymentMethod: String, CaseIterable {
-        case upi = "UPI"
-        case bankTransfer = "Bank Transfer"
-        case card = "Card"
-    }
+    @StateObject private var viewModel = DepositBuyViewModel()
     
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
                 headerSection
-                buyWithINRCard
+                
+                // OnMeta INR → USDT
+                if viewModel.viewState == .quote {
+                    quoteCard
+                } else {
+                    buyWithINRCard
+                }
+                
+                // DEX Swap USDT → PAXG
                 goldPurchaseCard
+                
                 howItWorksCard
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 24)
         }
         .background(themeManager.perfolioTheme.primaryBackground.ignoresSafeArea())
+        .sheet(isPresented: $viewModel.showingSafariView) {
+            if let url = viewModel.safariURL {
+                SafariView(url: url) {
+                    viewModel.handleSafariDismiss()
+                }
+            }
+        }
+        .alert("Error", isPresented: $viewModel.showingError) {
+            Button("OK") {
+                viewModel.dismissError()
+            }
+        } message: {
+            Text(viewModel.errorMessage)
+        }
     }
     
     // MARK: - Header
@@ -61,7 +77,7 @@ struct DepositBuyView: View {
                 // Amount input with presets
                 PerFolioInputField(
                     label: "Amount",
-                    text: $inrAmount,
+                    text: $viewModel.inrAmount,
                     leadingIcon: "indianrupeesign",
                     presetValues: ["₹500", "₹1000", "₹5000", "₹10000"]
                 )
@@ -70,12 +86,70 @@ struct DepositBuyView: View {
                 paymentMethodSelector
                 
                 // Get Quote button
-                PerFolioButton("GET QUOTE") {
-                    // Will be implemented in Phase 4
+                PerFolioButton("GET QUOTE", isDisabled: viewModel.viewState == .processing) {
+                    Task {
+                        await viewModel.getQuote()
+                    }
                 }
                 
                 // Info banner
                 PerFolioInfoBanner("Min: ₹500 • Max: ₹100,000")
+            }
+        }
+    }
+    
+    private var quoteCard: some View {
+        PerFolioCard {
+            VStack(alignment: .leading, spacing: 20) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("OnMeta Quote")
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                        Text("Review and proceed to payment")
+                            .font(.system(size: 14, weight: .regular, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Button {
+                        viewModel.resetOnMetaFlow()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 24))
+                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                    }
+                }
+                
+                Divider()
+                    .background(themeManager.perfolioTheme.border)
+                
+                if let quote = viewModel.currentQuote {
+                    VStack(spacing: 12) {
+                        quoteRow(label: "You Pay", value: quote.displayInrAmount, isHighlight: true)
+                        quoteRow(label: "Provider Fee", value: quote.displayFee)
+                        quoteRow(label: "Exchange Rate", value: quote.displayRate)
+                        quoteRow(label: "You Receive", value: quote.displayUsdtAmount, isHighlight: true)
+                        
+                        Divider()
+                            .background(themeManager.perfolioTheme.border)
+                        
+                        HStack {
+                            Image(systemName: "clock.fill")
+                                .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                            Text("Estimated Time: \(quote.estimatedTime)")
+                                .font(.system(size: 14, weight: .medium, design: .rounded))
+                                .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                        }
+                    }
+                    
+                    PerFolioButton("PROCEED TO PAYMENT") {
+                        viewModel.proceedToPayment()
+                    }
+                    
+                    PerFolioInfoBanner("You'll be redirected to OnMeta's secure payment page")
+                }
             }
         }
     }
@@ -113,12 +187,24 @@ struct DepositBuyView: View {
                 ForEach(PaymentMethod.allCases, id: \.self) { method in
                     PerFolioPresetButton(
                         method.rawValue,
-                        isSelected: selectedPaymentMethod == method
+                        isSelected: viewModel.selectedPaymentMethod == method
                     ) {
-                        selectedPaymentMethod = method
+                        viewModel.selectedPaymentMethod = method
                     }
                 }
             }
+        }
+    }
+    
+    private func quoteRow(label: String, value: String, isHighlight: Bool = false) -> some View {
+        HStack {
+            Text(label)
+                .font(.system(size: 15, weight: .medium, design: .rounded))
+                .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+            Spacer()
+            Text(value)
+                .font(.system(size: 16, weight: isHighlight ? .bold : .semibold, design: .rounded))
+                .foregroundStyle(isHighlight ? themeManager.perfolioTheme.tintColor : themeManager.perfolioTheme.textPrimary)
         }
     }
     
@@ -136,13 +222,19 @@ struct DepositBuyView: View {
                 Divider()
                     .background(themeManager.perfolioTheme.border)
                 
+                // Balances row
+                HStack(spacing: 16) {
+                    balanceItem(symbol: "USDT", balance: viewModel.formattedUSDTBalance)
+                    balanceItem(symbol: "PAXG", balance: viewModel.formattedPAXGBalance)
+                }
+                
                 // Gold price display
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Current Gold Price")
                             .font(.system(size: 13, weight: .regular, design: .rounded))
                             .foregroundStyle(themeManager.perfolioTheme.textSecondary)
-                        Text("$0.00 / oz")
+                        Text(viewModel.formattedGoldPrice + " / oz")
                             .font(.system(size: 18, weight: .bold, design: .rounded))
                             .foregroundStyle(themeManager.perfolioTheme.textPrimary)
                     }
@@ -152,17 +244,154 @@ struct DepositBuyView: View {
                 .background(themeManager.perfolioTheme.primaryBackground.opacity(0.5))
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 
+                // USDT amount input
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("USDT Amount")
+                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                    
+                    TextField("0.00", text: $viewModel.usdtAmount)
+                        .keyboardType(.decimalPad)
+                        .font(.system(size: 18, weight: .semibold, design: .rounded))
+                        .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                        .padding(14)
+                        .background(themeManager.perfolioTheme.primaryBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    
+                    // Quick presets
+                    HStack(spacing: 8) {
+                        ForEach(["25%", "50%", "75%", "Max"], id: \.self) { preset in
+                            PerFolioPresetButton(preset, isSelected: false) {
+                                setUSDTPreset(preset)
+                            }
+                        }
+                    }
+                }
+                
+                // Estimated PAXG output
+                if !viewModel.usdtAmount.isEmpty, viewModel.goldPrice > 0 {
+                    HStack {
+                        Text("You will receive")
+                            .font(.system(size: 14, weight: .medium, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                        Spacer()
+                        Text("~\(viewModel.estimatedPAXGAmount) PAXG")
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                    }
+                    .padding(12)
+                    .background(themeManager.perfolioTheme.goldenBoxGradient.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                }
+                
+                // Swap button with state
+                swapButton
+                
                 // Info banner
                 PerFolioInfoBanner(
                     "Gold purchases are instant and backed 1:1 by physical gold"
                 )
-                
-                // Coming soon button
-                PerFolioButton("COMING SOON", style: .disabled, isDisabled: true) {
-                    // Will be implemented in Phase 4
+            }
+        }
+    }
+    
+    private func balanceItem(symbol: String, balance: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(symbol)
+                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+            Text(balance)
+                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(themeManager.perfolioTheme.primaryBackground.opacity(0.5))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+    
+    private var swapButton: some View {
+        Group {
+            switch viewModel.swapState {
+            case .idle:
+                PerFolioButton("GET SWAP QUOTE") {
+                    Task {
+                        await viewModel.getSwapQuote()
+                    }
+                }
+            case .needsApproval:
+                PerFolioButton("APPROVE USDT") {
+                    Task {
+                        await viewModel.approveUSDT()
+                    }
+                }
+            case .approving:
+                PerFolioButton("APPROVING...", isDisabled: true) {
+                    // No action
+                }
+            case .swapping:
+                PerFolioButton("SWAPPING...", isDisabled: true) {
+                    // No action
+                }
+            case .success(let txHash):
+                VStack(spacing: 12) {
+                    HStack {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(themeManager.perfolioTheme.success)
+                        Text("Swap Successful!")
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.success)
+                    }
+                    
+                    Button {
+                        if let url = URL(string: "https://etherscan.io/tx/\(txHash)") {
+                            UIApplication.shared.open(url)
+                        }
+                    } label: {
+                        HStack {
+                            Text("View on Etherscan")
+                                .font(.system(size: 14, weight: .medium, design: .rounded))
+                            Image(systemName: "arrow.up.right.square")
+                        }
+                        .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                    }
+                    
+                    PerFolioButton("SWAP MORE") {
+                        viewModel.resetSwapFlow()
+                    }
+                }
+            case .error(let message):
+                VStack(spacing: 12) {
+                    Text(message)
+                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                        .foregroundStyle(themeManager.perfolioTheme.danger)
+                    
+                    PerFolioButton("TRY AGAIN") {
+                        viewModel.resetSwapFlow()
+                    }
                 }
             }
         }
+    }
+    
+    private func setUSDTPreset(_ preset: String) {
+        guard viewModel.usdtBalance > 0 else { return }
+        
+        let amount: Decimal
+        switch preset {
+        case "25%":
+            amount = viewModel.usdtBalance * 0.25
+        case "50%":
+            amount = viewModel.usdtBalance * 0.50
+        case "75%":
+            amount = viewModel.usdtBalance * 0.75
+        case "Max":
+            amount = viewModel.usdtBalance
+        default:
+            return
+        }
+        
+        viewModel.usdtAmount = String(format: "%.2f", NSDecimalNumber(decimal: amount).doubleValue)
     }
     
     // MARK: - How It Works

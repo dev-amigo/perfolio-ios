@@ -3,6 +3,12 @@ import SwiftUI
 struct PerFolioShellView: View {
     @EnvironmentObject private var themeManager: ThemeManager
     var onLogout: (() -> Void)?
+    @State private var selectedTab: Tab = .dashboard
+    
+    enum Tab: Int {
+        case dashboard = 0
+        case depositBuy = 1
+    }
     
     var body: some View {
         ZStack {
@@ -10,8 +16,21 @@ struct PerFolioShellView: View {
             themeManager.perfolioTheme.primaryBackground
                 .ignoresSafeArea()
             
-            // Phase 2: Dashboard only (tabs hidden)
-            PerFolioDashboardView(onLogout: onLogout)
+            // Phase 3: Dashboard + Deposit & Buy tabs
+            TabView(selection: $selectedTab) {
+                PerFolioDashboardView(onLogout: onLogout)
+                    .tabItem {
+                        Label("Dashboard", systemImage: "chart.line.uptrend.xyaxis")
+                    }
+                    .tag(Tab.dashboard)
+                
+                DepositBuyView()
+                    .tabItem {
+                        Label("Deposit & Buy", systemImage: "indianrupeesign.circle.fill")
+                    }
+                    .tag(Tab.depositBuy)
+            }
+            .tint(themeManager.perfolioTheme.tintColor)
         }
     }
 }

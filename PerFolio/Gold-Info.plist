@@ -81,5 +81,11 @@
 	<string>$(DEEP_LINK_SCHEME)</string>
 	<key>AGDefaultOAuthProvider</key>
 	<string>$(DEFAULT_OAUTH_PROVIDER)</string>
+	<key>AGOnMetaAPIKey</key>
+	<string>$(ONMETA_API_KEY)</string>
+	<key>AGOnMetaBaseURL</key>
+	<string>$(ONMETA_BASE_URL)</string>
+	<key>AG1InchAPIKey</key>
+	<string>$(ONEINCH_API_KEY)</string>
 </dict>
 </plist>

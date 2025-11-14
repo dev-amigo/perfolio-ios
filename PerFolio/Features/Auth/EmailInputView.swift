@@ -34,8 +34,9 @@ struct EmailInputView: View {
                         .font(.system(size: 32, weight: .bold, design: .rounded))
                         .foregroundStyle(themeManager.perfolioTheme.textPrimary)
                     
-                    Text("Hold modern gold, backed by crypto,\nwith privacy-preserving custody.")
+                    Text("Deposit cash, buy gold, and get instant loans")
                         .font(.system(size: 16, design: .rounded))
+                        .lineLimit(3)
                         .foregroundStyle(themeManager.perfolioTheme.textSecondary)
                         .multilineTextAlignment(.center)
                 }

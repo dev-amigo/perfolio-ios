@@ -6,3 +6,10 @@ PRIVY_JWKS_URL = https:/$()/auth.privy.io/api/v1/apps/cmhenc7hj004ijy0c311hbf2z/
 ETHEREUM_RPC_FALLBACK = https:/$()/ethereum.publicnode.com
 DEEP_LINK_SCHEME = perfolio-dev
 DEFAULT_OAUTH_PROVIDER = email
+
+// OnMeta Configuration (INR on-ramp)
+ONMETA_API_KEY = your_onmeta_api_key_here
+ONMETA_BASE_URL = https:/$()/platform.onmeta.in
+
+// 1inch DEX Configuration (for USDT→PAXG swaps)
+ONEINCH_API_KEY = your_1inch_api_key_here
