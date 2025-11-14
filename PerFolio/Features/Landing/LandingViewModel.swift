@@ -72,32 +72,43 @@ final class LandingViewModel: ObservableObject {
                 AppLogger.log("Privy access token verified for user \(user.id)", category: "auth")
                 
                 // Extract embedded wallet from Privy user
-                // Using real Privy embedded wallet from dashboard
-                // Available wallets:
-                // 1. 0xB3Eb44b13f05eDcb2aC1802e2725b6F35f77D33c
-                // 2. 0xF08b1c08c6F35e419cB499BeAFC831121Af7F636
-                // 3. 0x641961eE6a7c3c9196Ee3d8890abC4e36A540c3D
+                // Get embedded Ethereum wallets from Privy SDK
+                let embeddedWallets = user.embeddedEthereumWallets
                 
-                // Using first wallet for this user
-                let embeddedWalletAddress = "0xB3Eb44b13f05eDcb2aC1802e2725b6F35f77D33c"
+                AppLogger.log("Found \(embeddedWallets.count) embedded Ethereum wallets", category: "auth")
                 
-                // TODO: Extract wallet ID from Privy SDK to enable REST API
-                // For now, we'll use HTTP RPC with this wallet address
-                // Once we extract wallet ID, Privy REST API will activate automatically
-                
-                AppLogger.log("✅ Using Privy embedded wallet: \(embeddedWalletAddress)", category: "auth")
-                AppLogger.log("   User ID: \(user.id)", category: "auth")
-                
-                // Save wallet info
-                UserDefaults.standard.set(embeddedWalletAddress, forKey: "userWalletAddress")
-                UserDefaults.standard.set(user.id, forKey: "privyUserId")
-                UserDefaults.standard.set(accessToken, forKey: "privyAccessToken")
-                
-                // TODO: Once we extract wallet ID from SDK, save it:
-                // UserDefaults.standard.set(walletId, forKey: "userWalletId")
-                // This will enable Privy REST API with gas sponsorship
-                
-                AppLogger.log("Wallet info saved to storage", category: "auth")
+                if let firstWallet = embeddedWallets.first {
+                    // Extract wallet address and ID
+                    let walletAddress = firstWallet.address
+                    let walletId = firstWallet.id
+                    
+                    AppLogger.log("✅ Embedded wallet extracted from SDK!", category: "auth")
+                    AppLogger.log("   Wallet Address: \(walletAddress)", category: "auth")
+                    AppLogger.log("   Wallet ID: \(walletId)", category: "auth")
+                    AppLogger.log("   User ID: \(user.id)", category: "auth")
+                    
+                    // Save wallet info to UserDefaults
+                    UserDefaults.standard.set(walletAddress, forKey: "userWalletAddress")
+                    UserDefaults.standard.set(walletId, forKey: "userWalletId")
+                    UserDefaults.standard.set(user.id, forKey: "privyUserId")
+                    UserDefaults.standard.set(accessToken, forKey: "privyAccessToken")
+                    
+                    AppLogger.log("🎉 Wallet info saved! Privy REST API now active!", category: "auth")
+                } else {
+                    // Fallback: Use known wallet address if SDK doesn't return wallets yet
+                    let knownWalletAddress = "0xB3Eb44b13f05eDcb2aC1802e2725b6F35f77D33c"
+                    
+                    AppLogger.log("⚠️ No embedded wallets returned by SDK", category: "auth")
+                    AppLogger.log("   Using known wallet address: \(knownWalletAddress)", category: "auth")
+                    AppLogger.log("   Privy REST API will use HTTP RPC fallback", category: "auth")
+                    
+                    // Save wallet info (without wallet ID - will use HTTP RPC)
+                    UserDefaults.standard.set(knownWalletAddress, forKey: "userWalletAddress")
+                    UserDefaults.standard.set(user.id, forKey: "privyUserId")
+                    UserDefaults.standard.set(accessToken, forKey: "privyAccessToken")
+                    
+                    AppLogger.log("Wallet info saved to storage", category: "auth")
+                }
                 
                 isLoading = false
                 alert = AlertConfig(
