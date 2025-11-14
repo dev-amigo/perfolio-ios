@@ -41,23 +41,11 @@ struct LandingView: View {
         Group {
             switch viewModel.emailLoginState {
             case .emailInput:
-                VStack(spacing: 0) {
-                    if configuration.environment == .development {
-                        environmentBadge
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 24)
-                            .padding(.top, 24)
-                    }
-                    
-                    EmailInputView(
-                        email: $viewModel.email,
-                        onContinue: viewModel.sendEmailCode,
-                        isLoading: viewModel.isLoading
-                    )
-                    
-                    footer
-                        .padding(.bottom, 24)
-                }
+                EmailInputView(
+                    email: $viewModel.email,
+                    onContinue: viewModel.sendEmailCode,
+                    isLoading: viewModel.isLoading
+                )
                 .background(themeManager.perfolioTheme.primaryBackground.ignoresSafeArea())
                 
             case .codeVerification:
