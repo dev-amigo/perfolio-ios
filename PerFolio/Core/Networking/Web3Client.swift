@@ -108,28 +108,33 @@ actor Web3Client {
     
     init(
         primaryRPC: String? = nil,
-        fallbackRPC: String = "https://ethereum.publicnode.com",
+        fallbackRPC: String? = nil,
         session: URLSession = .shared
     ) {
-        // Use configured Ethereum RPC (LlamaRPC - fast and reliable)
-        let ethereumRPCURL = Bundle.main.object(forInfoDictionaryKey: "AGEthereumRPCURL") as? String ?? ""
+        // Use Privy RPC as primary (with gas sponsorship support)
+        let privyRPCURL = Bundle.main.object(forInfoDictionaryKey: "AGPrivyRPCURL") as? String ?? ""
+        let configuredFallback = Bundle.main.object(forInfoDictionaryKey: "AGEthereumRPCFallback") as? String ?? ""
+        let defaultFallback = "https://ethereum.publicnode.com"
         
-        if !ethereumRPCURL.isEmpty {
-            self.primaryRPC = primaryRPC ?? ethereumRPCURL
-            AppLogger.log("🔗 Web3Client initialized with Ethereum RPC", category: "web3")
-            AppLogger.log("   Primary: \(ethereumRPCURL)", category: "web3")
-            AppLogger.log("   Fallback: \(fallbackRPC)", category: "web3")
+        // Set primary RPC (Privy preferred)
+        if !privyRPCURL.isEmpty {
+            self.primaryRPC = primaryRPC ?? privyRPCURL
+            AppLogger.log("🔗 Web3Client initialized with Privy RPC", category: "web3")
+            AppLogger.log("   Primary: \(privyRPCURL)", category: "web3")
         } else {
-            // Use fallback if no RPC configured
-            self.primaryRPC = primaryRPC ?? fallbackRPC
-            AppLogger.log("⚠️ No RPC configured, using fallback: \(fallbackRPC)", category: "web3")
+            let fallbackToUse = !configuredFallback.isEmpty ? configuredFallback : defaultFallback
+            self.primaryRPC = primaryRPC ?? fallbackToUse
+            AppLogger.log("⚠️ Privy RPC not configured, using fallback", category: "web3")
         }
         
-        self.fallbackRPC = fallbackRPC
+        // Set fallback RPC (LlamaRPC or public node)
+        self.fallbackRPC = fallbackRPC ?? (!configuredFallback.isEmpty ? configuredFallback : defaultFallback)
+        AppLogger.log("   Fallback: \(self.fallbackRPC)", category: "web3")
+        
         self.session = session
         
-        // Note: Privy gas sponsorship will be integrated via SDK for transactions in Phase 3
-        AppLogger.log("💡 Gas sponsorship via Privy SDK will be used for transactions", category: "web3")
+        // Gas sponsorship info
+        AppLogger.log("💡 Privy RPC includes gas sponsorship for transactions", category: "web3")
     }
     
     /// Make a generic RPC call with automatic fallback
