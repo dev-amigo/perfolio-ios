@@ -20,6 +20,10 @@ struct AppRootView: View {
             }
         }
         .animation(.easeInOut(duration: 0.35), value: route)
+        .onAppear {
+            // Ensure Privy SDK gets initialized even when we skip the landing screen
+            privyCoordinator.prepare()
+        }
     }
 
     private func checkAuthAndProceed() {

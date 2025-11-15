@@ -181,7 +181,7 @@ final class FluidVaultService: ObservableObject {
         // Build operate transaction
         // operate(uint256 nftId, int256 newCol, int256 newDebt, address to)
         // Function selector: keccak256("operate(uint256,int256,int256,address)")[0:4]
-        let functionSelector = "0x690d8320"
+        let functionSelector = "0x032d2276"
         
         // nftId = 0 (create new position)
         let nftId = "0".paddingLeft(to: 64, with: "0")
@@ -190,9 +190,9 @@ final class FluidVaultService: ObservableObject {
         let collateralWei = request.collateralAmount * pow(Decimal(10), 18)
         let collateralHex = decimalToHex(collateralWei).paddingLeft(to: 64, with: "0")
         
-        // newDebt = positive borrow amount in smallest units
+        // newDebt = borrow delta (positive means taking on debt)
         let borrowSmallest = request.borrowAmount * pow(Decimal(10), 6)
-        let borrowHex = decimalToHex(borrowSmallest).paddingLeft(to: 64, with: "0")
+        let borrowHex = encodeSignedInt256Hex(value: borrowSmallest, isNegative: false)
         
         // to = user address
         let cleanAddress = request.userAddress.replacingOccurrences(of: "0x", with: "").paddingLeft(to: 64, with: "0")
@@ -294,50 +294,25 @@ final class FluidVaultService: ObservableObject {
         AppLogger.log("   Data: \(request.data.prefix(66))...", category: "fluid")
         AppLogger.log("   Value: \(request.value)", category: "fluid")
         
+        // Send transaction via wallet provider
         do {
-            // Try to send transaction using the embedded wallet
-            // The Privy SDK embedded wallet should have a method like:
-            // - wallet.sendTransaction()
-            // - wallet.send()
-            // - wallet.signAndSend()
+            let chainId = await wallet.provider.chainId
+            AppLogger.log("🔗 Embedded wallet provider chain ID: \(chainId)", category: "fluid")
             
-            // Attempt 1: Check if wallet has sendTransaction method
-            // let txHash = try await wallet.sendTransaction(to: request.to, data: request.data, value: request.value)
-            
-            // Attempt 2: Build transaction parameters and send
-            let txParams = [
-                "to": request.to,
-                "from": request.from,
-                "data": request.data,
-                "value": request.value
-            ]
-            
-            AppLogger.log("📤 Attempting to send transaction via Privy embedded wallet...", category: "fluid")
-            
-            // The embedded wallet object should have a transaction sending method
-            // Based on Privy SDK patterns, it might be:
-            // let result = try await wallet.request(method: "eth_sendTransaction", params: [txParams])
-            
-            // For now, provide detailed error with actual wallet info
-            let walletId = wallet.id ?? "unknown"
-            throw FluidVaultError.notImplemented(
-                """
-                Privy embedded wallet ready but SDK method unknown.
-                
-                Wallet Info:
-                - Address: \(wallet.address)
-                - ID: \(walletId)
-                - Type: \(type(of: wallet))
-                
-                Next Steps:
-                1. Check Privy SDK documentation for: \(type(of: wallet))
-                2. Look for methods: sendTransaction(), send(), request()
-                3. Example: wallet.sendTransaction(to: "\(request.to)", data: "\(request.data)", value: "\(request.value)")
-                
-                The transaction data is ready and valid!
-                """
+            let unsignedTx = EthereumRpcRequest.UnsignedEthTransaction(
+                from: request.from,
+                to: request.to,
+                data: request.data,
+                value: makeHexQuantity(from: request.value),
+                chainId: .int(chainId)
             )
             
+            let rpcRequest = try EthereumRpcRequest.ethSendTransaction(transaction: unsignedTx)
+            AppLogger.log("📤 Sending eth_sendTransaction via Privy provider...", category: "fluid")
+            
+            let txHash = try await wallet.provider.request(rpcRequest)
+            AppLogger.log("📬 Privy provider returned tx hash: \(txHash)", category: "fluid")
+            return txHash
         } catch let error as FluidVaultError {
             throw error
         } catch {
@@ -426,8 +401,48 @@ final class FluidVaultService: ObservableObject {
     }
     
     private func decimalToHex(_ value: Decimal) -> String {
-        let intValue = NSDecimalNumber(decimal: value).intValue
+        let intValue = NSDecimalNumber(decimal: value).int64Value
         return String(intValue, radix: 16)
+    }
+    
+    private func encodeSignedInt256Hex(value: Decimal, isNegative: Bool) -> String {
+        let unsignedHex = decimalToHex(value).paddingLeft(to: 64, with: "0")
+        return isNegative ? twosComplement256(of: unsignedHex) : unsignedHex
+    }
+    
+    private func twosComplement256(of hex: String) -> String {
+        var digits = Array(hex.lowercased())
+        
+        for index in 0..<digits.count {
+            guard let value = digits[index].hexDigitValue else { continue }
+            let inverted = 15 - value
+            digits[index] = hexDigit(for: inverted)
+        }
+        
+        var carry = 1
+        for index in stride(from: digits.count - 1, through: 0, by: -1) {
+            guard let value = digits[index].hexDigitValue else { continue }
+            let sum = value + carry
+            digits[index] = hexDigit(for: sum % 16)
+            carry = sum / 16
+            if carry == 0 { break }
+        }
+        
+        return String(digits)
+    }
+    
+    private func hexDigit(for value: Int) -> Character {
+        let base = value < 10 ? 48 + value : 87 + value
+        return Character(UnicodeScalar(base)!)
+    }
+    
+    private func makeHexQuantity(from value: String) -> EthereumRpcRequest.UnsignedEthTransaction.Quantity {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let intValue = Int(trimmed), !trimmed.hasPrefix("0x") && !trimmed.hasPrefix("0X") {
+            return .int(intValue)
+        }
+        let prefixed = trimmed.lowercased().hasPrefix("0x") ? trimmed : "0x\(trimmed)"
+        return .hexadecimalNumber(prefixed)
     }
 }
 
@@ -467,4 +482,3 @@ enum FluidVaultError: LocalizedError {
         }
     }
 }
-
