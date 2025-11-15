@@ -8,6 +8,7 @@ struct PerFolioShellView: View {
     enum Tab: Int {
         case dashboard = 0
         case wallet = 1
+        case borrow = 2
     }
     
     var body: some View {
@@ -16,7 +17,7 @@ struct PerFolioShellView: View {
             themeManager.perfolioTheme.primaryBackground
                 .ignoresSafeArea()
             
-            // Phase 3: Dashboard + Deposit & Buy tabs
+            // Phase 3-4: Dashboard + Wallet + Borrow tabs
             TabView(selection: $selectedTab) {
                 PerFolioDashboardView(onLogout: onLogout)
                     .tabItem {
@@ -29,6 +30,12 @@ struct PerFolioShellView: View {
                         Label("Wallet", systemImage: "wallet.bifold")
                     }
                     .tag(Tab.wallet)
+                
+                BorrowView()
+                    .tabItem {
+                        Label("Borrow", systemImage: "banknote.fill")
+                    }
+                    .tag(Tab.borrow)
             }
             .tint(themeManager.perfolioTheme.tintColor)
         }
