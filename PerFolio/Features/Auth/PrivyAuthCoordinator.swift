@@ -25,6 +25,11 @@ final class PrivyAuthCoordinator: ObservableObject, PrivyAuthenticating {
     private var authStreamTask: Task<Void, Never>?
     private let environment: EnvironmentConfiguration
     private let tokenVerifier: PrivyTokenVerifier
+    
+    // Expose client for transaction signing
+    var privyClient: (any Privy)? {
+        return client
+    }
 
     init(environment: EnvironmentConfiguration = .current, tokenVerifier: PrivyTokenVerifier? = nil) {
         self.environment = environment

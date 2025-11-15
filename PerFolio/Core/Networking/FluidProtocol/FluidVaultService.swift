@@ -256,13 +256,33 @@ final class FluidVaultService: ObservableObject {
         // Get Privy auth coordinator
         let authCoordinator = PrivyAuthCoordinator.shared
         
-        // Check if we have an authenticated user
-        guard case .authenticated(let user) = authCoordinator.authState else {
-            throw FluidVaultError.transactionFailed("User not authenticated")
+        // Log current auth state for debugging
+        let authState = authCoordinator.authState
+        AppLogger.log("🔍 Current AuthState type: \(type(of: authState))", category: "fluid")
+        AppLogger.log("🔍 AuthState description: \(authState)", category: "fluid")
+        
+        // Try to extract user from authState
+        // AuthState cases in Privy SDK:
+        // - .notReady
+        // - .unauthenticated
+        // - .authenticated(user: PrivyUser)
+        
+        guard case .authenticated(let user) = authState else {
+            // Log the actual state for debugging
+            AppLogger.log("❌ User not authenticated. Current state: \(authState)", category: "fluid")
+            AppLogger.log("💡 Possible reasons:", category: "fluid")
+            AppLogger.log("   1. Session expired - user needs to log in again", category: "fluid")
+            AppLogger.log("   2. Auth state not persisted across app launches", category: "fluid")
+            AppLogger.log("   3. Transaction called before auth completed", category: "fluid")
+            throw FluidVaultError.transactionFailed("User not authenticated. Current state: \(authState)")
         }
+        
+        AppLogger.log("✅ User authenticated successfully", category: "fluid")
         
         // Get user's embedded Ethereum wallet
         let embeddedWallets = user.embeddedEthereumWallets
+        
+        AppLogger.log("🔍 Found \(embeddedWallets.count) embedded wallets", category: "fluid")
         
         guard let wallet = embeddedWallets.first else {
             throw FluidVaultError.transactionFailed("No embedded wallet found")
@@ -299,13 +319,14 @@ final class FluidVaultService: ObservableObject {
             // let result = try await wallet.request(method: "eth_sendTransaction", params: [txParams])
             
             // For now, provide detailed error with actual wallet info
+            let walletId = wallet.id ?? "unknown"
             throw FluidVaultError.notImplemented(
                 """
                 Privy embedded wallet ready but SDK method unknown.
                 
                 Wallet Info:
                 - Address: \(wallet.address)
-                - ID: \(wallet.id)
+                - ID: \(walletId)
                 - Type: \(type(of: wallet))
                 
                 Next Steps:
