@@ -41,7 +41,9 @@ final class DepositBuyViewModel: ObservableObject {
     
     // MARK: - Published Properties
     
-    @Published var inrAmount: String = ""
+    // Currency & Amount
+    @Published var selectedFiatCurrency: FiatCurrency = .default
+    @Published var inrAmount: String = ""  // Renamed to fiatAmount in future
     @Published var selectedPaymentMethod: PaymentMethod = .upi
     @Published var viewState: ViewState = .input
     @Published var currentQuote: OnMetaService.Quote?

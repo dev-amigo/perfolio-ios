@@ -7,7 +7,7 @@ struct PerFolioShellView: View {
     
     enum Tab: Int {
         case dashboard = 0
-        case depositBuy = 1
+        case wallet = 1
     }
     
     var body: some View {
@@ -26,9 +26,9 @@ struct PerFolioShellView: View {
                 
                 DepositBuyView()
                     .tabItem {
-                        Label("Deposit & Buy", systemImage: "indianrupeesign.circle.fill")
+                        Label("Wallet", systemImage: "wallet.bifold")
                     }
-                    .tag(Tab.depositBuy)
+                    .tag(Tab.wallet)
             }
             .tint(themeManager.perfolioTheme.tintColor)
         }

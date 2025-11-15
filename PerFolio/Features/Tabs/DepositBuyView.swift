@@ -3,23 +3,46 @@ import SwiftUI
 struct DepositBuyView: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @StateObject private var viewModel = DepositBuyViewModel()
+    @State private var isDepositExpanded = false
+    @State private var isWithdrawExpanded = false
     
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
                 headerSection
                 
-                // OnMeta INR → USDT
-                if viewModel.viewState == .quote {
-                    quoteCard
-                } else {
-                    buyWithINRCard
+                // Expandable Section 1: Deposit (Fiat → PAXG)
+                ExpandableSection(
+                    icon: "arrow.down.circle.fill",
+                    title: "Deposit",
+                    subtitle: "Buy gold with fiat currency",
+                    isExpanded: $isDepositExpanded
+                ) {
+                    VStack(spacing: 16) {
+                        // OnMeta INR → USDT
+                        if viewModel.viewState == .quote {
+                            quoteCard
+                        } else {
+                            buyWithINRCard
+                        }
+                        
+                        // DEX Swap USDT → PAXG
+                        goldPurchaseCard
+                        
+                        // How It Works
+                        howItWorksCard
+                    }
                 }
                 
-                // DEX Swap USDT → PAXG
-                goldPurchaseCard
-                
-                howItWorksCard
+                // Expandable Section 2: Withdraw (PAXG → Fiat)
+                ExpandableSection(
+                    icon: "arrow.up.circle.fill",
+                    title: "Withdraw",
+                    subtitle: "Cash out to your bank account",
+                    isExpanded: $isWithdrawExpanded
+                ) {
+                    withdrawPlaceholder
+                }
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 24)
@@ -45,15 +68,73 @@ struct DepositBuyView: View {
     
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Deposit & Buy")
+            Text("Wallet")
                 .font(.system(size: 32, weight: .bold, design: .rounded))
                 .foregroundStyle(themeManager.perfolioTheme.textPrimary)
             
-            Text("Fund your account and purchase gold")
+            Text("Manage your gold and funds")
                 .font(.system(size: 16, weight: .regular, design: .rounded))
                 .foregroundStyle(themeManager.perfolioTheme.textSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    
+    // MARK: - Withdraw Placeholder
+    
+    private var withdrawPlaceholder: some View {
+        PerFolioCard {
+            VStack(spacing: 16) {
+                Image(systemName: "banknote.fill")
+                    .font(.system(size: 48))
+                    .foregroundStyle(themeManager.perfolioTheme.tintColor.opacity(0.5))
+                
+                Text("Withdrawal Feature")
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                
+                Text("Cash out your PAXG to your bank account or UPI. Coming soon in Milestone 5.")
+                    .font(.system(size: 15, weight: .regular, design: .rounded))
+                    .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                
+                Divider()
+                    .background(themeManager.perfolioTheme.border)
+                
+                VStack(alignment: .leading, spacing: 12) {
+                    featureItem(icon: "globe", text: "Support for 10+ currencies")
+                    featureItem(icon: "building.columns", text: "Bank transfer & UPI support")
+                    featureItem(icon: "checkmark.shield", text: "Secure & compliant via Transak")
+                }
+            }
+            .padding(8)
+        }
+    }
+    
+    private func featureItem(icon: String, text: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                .frame(width: 20)
+            Text(text)
+                .font(.system(size: 14, weight: .medium, design: .rounded))
+                .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+            Spacer()
+        }
+    }
+    
+    // MARK: - Currency Helper
+    
+    private func currencyIcon(for currency: FiatCurrency) -> String {
+        switch currency {
+        case .inr: return "indianrupeesign"
+        case .usd, .aud, .cad, .sgd: return "dollarsign"
+        case .eur: return "eurosign"
+        case .gbp: return "sterlingsign"
+        case .jpy: return "yensign"
+        case .chf: return "francsign"
+        case .aed: return "bitcoinsign"  // Using as placeholder for dirham
+        }
     }
     
     // MARK: - Buy Crypto with INR
@@ -62,24 +143,32 @@ struct DepositBuyView: View {
         PerFolioCard {
             VStack(alignment: .leading, spacing: 20) {
                 PerFolioSectionHeader(
-                    icon: "indianrupeesign.circle.fill",
-                    title: "Buy Crypto with INR",
+                    icon: "\(currencyIcon(for: viewModel.selectedFiatCurrency)).circle.fill",
+                    title: "Buy Crypto with \(viewModel.selectedFiatCurrency.rawValue)",
                     subtitle: "Use UPI, bank transfer, or card to purchase USDT"
                 )
                 
                 Divider()
                     .background(themeManager.perfolioTheme.border)
                 
-                // Currency selectors (locked)
-                lockedSelector(icon: "indianrupeesign", label: "Fiat Currency", value: "INR")
+                // Currency selector (now dynamic!)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Fiat Currency")
+                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                    
+                    CurrencyPicker(selectedCurrency: $viewModel.selectedFiatCurrency)
+                }
+                
+                // Crypto selector (locked to USDT)
                 lockedSelector(icon: "dollarsign.circle.fill", label: "Crypto", value: "USDT")
                 
-                // Amount input with presets
+                // Amount input with dynamic presets
                 PerFolioInputField(
                     label: "Amount",
                     text: $viewModel.inrAmount,
-                    leadingIcon: "indianrupeesign",
-                    presetValues: ["₹500", "₹1000", "₹5000", "₹10000"]
+                    leadingIcon: currencyIcon(for: viewModel.selectedFiatCurrency),
+                    presetValues: viewModel.selectedFiatCurrency.presetValues
                 )
                 
                 // Payment method selector
@@ -92,8 +181,11 @@ struct DepositBuyView: View {
                     }
                 }
                 
-                // Info banner
-                PerFolioInfoBanner("Min: ₹500 • Max: ₹100,000")
+                // Info banner with dynamic limits
+                PerFolioInfoBanner(
+                    "Min: \(viewModel.selectedFiatCurrency.format(viewModel.selectedFiatCurrency.minDepositAmount)) • " +
+                    "Max: \(viewModel.selectedFiatCurrency.format(viewModel.selectedFiatCurrency.maxDepositAmount))"
+                )
             }
         }
     }
