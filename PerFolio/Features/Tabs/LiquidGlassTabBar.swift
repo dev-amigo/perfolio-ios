@@ -35,7 +35,7 @@ struct LiquidGlassTabBar<Selection: Hashable>: View {
                 }
             }
             .tabViewStyle(.sidebarAdaptable)
-            .tabBarMinimizeBehavior(.onScrollDown)
+//            .tabBarMinimizeBehavior(.onScrollDown)
         } else {
             TabView(selection: $selection) {
                 ForEach(tabs) { tab in

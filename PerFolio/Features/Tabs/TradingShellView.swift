@@ -43,14 +43,14 @@ struct TradingShellView: View {
             )
                     rightSidebar
                 }
-                .tabViewBottomAccessory {
-                    Button {
-                        selection = .wallet
-                    } label: {
-                        Label("Quick Wallet", systemImage: "bolt.fill")
-                    }
-                }
-                .tabBarMinimizeBehavior(.onScrollDown)
+//                .tabViewBottomAccessory {
+//                    Button {
+//                        selection = .wallet
+//                    } label: {
+//                        Label("Quick Wallet", systemImage: "bolt.fill")
+//                    }
+//                }
+//                .tabBarMinimizeBehavior(.onScrollDown)
             } else {
                 legacyTabs
             }
