@@ -7,11 +7,6 @@ struct DepositBuyView: View {
     @State private var isWithdrawExpanded = false
     @State private var isSwapExpanded = false
     
-    // Withdraw form state
-    @State private var withdrawAmount: String = ""
-    @State private var withdrawFiatCurrency: FiatCurrency = .inr
-    @State private var withdrawMethod: PaymentMethod = .upi
-    
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
@@ -34,14 +29,14 @@ struct DepositBuyView: View {
                     subtitle: "Cash out to your bank account",
                     isExpanded: $isWithdrawExpanded
                 ) {
-                    withdrawContent
+                    withdrawPlaceholder
                 }
                 
-                // Expandable Section 3: Swap (USDC → PAXG)
+                // Expandable Section 3: Swap (USDT → PAXG)
                 ExpandableSection(
                     icon: "arrow.2.squarepath",
                     title: "Swap",
-                    subtitle: "Convert USDC to PAXG",
+                    subtitle: "Convert USDT to PAXG",
                     isExpanded: $isSwapExpanded
                 ) {
                     swapContent
@@ -86,11 +81,11 @@ struct DepositBuyView: View {
     
     private var depositContent: some View {
         VStack(spacing: 16) {
-            // Simple Fiat → USDC flow
+            // Simple Fiat → USDT flow
             if viewModel.viewState == .quote, let quote = viewModel.currentQuote {
-                simpleUSDCQuoteCard(quote)
+                simpleUSDTQuoteCard(quote)
             } else {
-                buyFiatToUSDCCard
+                buyFiatToUSDTCard
             }
             
             // How It Works
@@ -100,256 +95,46 @@ struct DepositBuyView: View {
     
     private var swapContent: some View {
         VStack(spacing: 16) {
-            // USDC → PAXG swap (for existing USDC holders)
+            // USDT → PAXG swap (for existing USDT holders)
             goldPurchaseCard
         }
     }
     
-    // MARK: - Withdraw Content
+    // MARK: - Withdraw Placeholder
     
-    private var withdrawContent: some View {
-        VStack(spacing: 16) {
-            withdrawFormCard
-            withdrawInfoCard
-        }
-    }
-    
-    private var withdrawFormCard: some View {
+    private var withdrawPlaceholder: some View {
         PerFolioCard {
-            VStack(alignment: .leading, spacing: 18) {
-                PerFolioSectionHeader(
-                    icon: "arrow.up.circle.fill",
-                    title: "Withdraw PAXG",
-                    subtitle: "Cash out to your bank or UPI"
-                )
+            VStack(spacing: 16) {
+                Image(systemName: "banknote.fill")
+                    .font(.system(size: 48))
+                    .foregroundStyle(themeManager.perfolioTheme.tintColor.opacity(0.5))
+                
+                Text("Withdrawal Feature")
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                
+                Text("Cash out your PAXG to your bank account or UPI. Coming soon in Milestone 5.")
+                    .font(.system(size: 15, weight: .regular, design: .rounded))
+                    .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
                 
                 Divider()
                     .background(themeManager.perfolioTheme.border)
                 
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Available Balance")
-                        .font(.system(size: 14, weight: .medium, design: .rounded))
-                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
-                    
-                    HStack(spacing: 12) {
-                        Image(systemName: "diamond.fill")
-                            .foregroundStyle(themeManager.perfolioTheme.tintColor)
-                            .font(.system(size: 16, weight: .semibold))
-                        
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("\(viewModel.formattedPAXGBalance) PAXG")
-                                .font(.system(size: 18, weight: .bold, design: .rounded))
-                                .foregroundStyle(themeManager.perfolioTheme.textPrimary)
-                            
-                            Text("≈ \(estimatedPaxgUSDValue)")
-                                .font(.system(size: 13, weight: .regular, design: .rounded))
-                                .foregroundStyle(themeManager.perfolioTheme.textSecondary)
-                        }
-                        
-                        Spacer()
-                    }
-                    .padding(12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(themeManager.perfolioTheme.primaryBackground)
-                    )
-                }
-                
-                PerFolioInputField(
-                    label: "Withdraw Amount",
-                    placeholder: "0.0000",
-                    text: $withdrawAmount,
-                    trailingText: "PAXG"
-                )
-                
-                quickAmountChips
-                
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Receive Currency")
-                        .font(.system(size: 14, weight: .medium, design: .rounded))
-                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
-                    
-                    CurrencyPicker(selectedCurrency: $withdrawFiatCurrency)
-                }
-                
-                withdrawMethodSelector
-                
-                summaryRow
-                
-                PerFolioButton(
-                    "START WITHDRAWAL",
-                    isDisabled: withdrawCTAIsDisabled
-                ) {
-                    // Off-ramp wiring will connect to Transak/OnMeta widget in milestone 5
-                    viewModel.errorMessage = "Withdrawal flow is being wired to Transak/OnMeta. We’ve captured your amount and currency for now."
-                    viewModel.showingError = true
-                    AppLogger.log("Withdraw CTA tapped — amount: \(withdrawAmount), currency: \(withdrawFiatCurrency.rawValue), method: \(withdrawMethod.rawValue)", category: "withdraw")
-                }
-            }
-        }
-    }
-    
-    private var quickAmountChips: some View {
-        let balance = viewModel.paxgBalance
-        let steps: [Decimal] = [0.25, 0.5, 0.75, 1.0]
-        
-        return HStack(spacing: 10) {
-            ForEach(steps, id: \.self) { step in
-                Button {
-                    let amount = (balance * step).rounded(scale: 6)
-                    withdrawAmount = amount.formatted()
-                } label: {
-                    let percent = Int(truncating: NSDecimalNumber(decimal: step * 100))
-                    Text(step == 1.0 ? "Max" : "\(percent)%")
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
-                        .foregroundStyle(themeManager.perfolioTheme.textPrimary)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(themeManager.perfolioTheme.primaryBackground)
-                        )
-                }
-                .buttonStyle(.plain)
-            }
-            Spacer()
-        }
-    }
-    
-    private var withdrawMethodSelector: some View {
-        HStack(spacing: 10) {
-            paymentMethodPill(.upi, title: "UPI")
-            paymentMethodPill(.bankTransfer, title: "Bank Transfer")
-        }
-    }
-    
-    private func paymentMethodPill(_ method: PaymentMethod, title: String) -> some View {
-        let isSelected = withdrawMethod == method
-        return Button {
-            withdrawMethod = method
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: method == .upi ? "indianrupeesign" : "building.columns")
-                    .font(.system(size: 13, weight: .semibold))
-                Text(title)
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
-            }
-            .foregroundStyle(isSelected ? themeManager.perfolioTheme.primaryBackground : themeManager.perfolioTheme.textSecondary)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(isSelected ? themeManager.perfolioTheme.tintColor : themeManager.perfolioTheme.primaryBackground)
-            )
-        }
-        .buttonStyle(.plain)
-    }
-    
-    private var summaryRow: some View {
-        VStack(spacing: 10) {
-            PerFolioMetricRow(label: "You'll receive (est.)", value: estimatedFiatPayout)
-            PerFolioMetricRow(label: "Provider", value: withdrawFiatCurrency.preferredProvider.name)
-        }
-        .padding(12)
-        .background(themeManager.perfolioTheme.primaryBackground.opacity(0.5))
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-    }
-    
-    private var withdrawCTAIsDisabled: Bool {
-        guard let amount = Decimal(string: withdrawAmount), amount > 0 else { return true }
-        return amount > viewModel.paxgBalance
-    }
-    
-    private var estimatedPaxgUSDValue: String {
-        let usd = viewModel.paxgBalance * viewModel.goldPrice
-        return CurrencyFormatter.formatUSD(usd)
-    }
-    
-    private var estimatedFiatPayout: String {
-        guard let amount = Decimal(string: withdrawAmount), amount > 0 else {
-            return withdrawFiatCurrency.format(0)
-        }
-        // Uses USD gold price as baseline; FX rates will be added with real off-ramp integration
-        let usdValue = amount * viewModel.goldPrice
-        return "\(withdrawFiatCurrency.symbol)\(CurrencyFormatter.formatDecimal(usdValue)) (USD equivalent)"
-    }
-    
-    private var withdrawInfoCard: some View {
-        PerFolioCard(style: .secondary) {
-            VStack(spacing: 18) {
-                // Center icon
-                ZStack {
-                    Circle()
-                        .fill(themeManager.perfolioTheme.tintColor.opacity(0.12))
-                        .frame(width: 78, height: 78)
-                    Image(systemName: "banknote.fill")
-                        .font(.system(size: 36, weight: .bold))
-                        .foregroundStyle(themeManager.perfolioTheme.tintColor)
-                }
-                
-                VStack(spacing: 6) {
-                    Text("Withdrawal Feature")
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
-                        .foregroundStyle(themeManager.perfolioTheme.textPrimary)
-                    
-                    Text("Cash out your PAXG to your bank account or UPI. Off-ramp wiring is underway.")
-                        .font(.system(size: 15, weight: .regular, design: .rounded))
-                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
-                        .multilineTextAlignment(.center)
-                }
-                .frame(maxWidth: .infinity)
-                
-                Divider()
-                    .background(themeManager.perfolioTheme.border)
-                
-                VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: 12) {
                     featureItem(icon: "globe", text: "Support for 10+ currencies")
                     featureItem(icon: "building.columns", text: "Bank transfer & UPI support")
                     featureItem(icon: "checkmark.shield", text: "Secure & compliant via Transak")
                 }
-                
-                providerBadgeRow
             }
-            .padding(.vertical, 4)
+            .padding(8)
         }
-    }
-    
-    private var providerBadgeRow: some View {
-        let onMetaConfigured = !(Bundle.main.object(forInfoDictionaryKey: "AGOnMetaAPIKey") as? String ?? "").isEmpty
-        
-        let transakKey = (Bundle.main.object(forInfoDictionaryKey: "AGTransakAPIKey") as? String)
-            ?? (Bundle.main.object(forInfoDictionaryKey: "TRANSAK_API_KEY") as? String)
-            ?? ProcessInfo.processInfo.environment["TRANSAK_API_KEY"]
-        let transakConfigured = !(transakKey ?? "").isEmpty
-        
-        return HStack(spacing: 10) {
-            providerPill(title: "OnMeta", isReady: onMetaConfigured)
-            providerPill(title: "Transak", isReady: transakConfigured)
-            Spacer()
-        }
-    }
-    
-    private func providerPill(title: String, isReady: Bool) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: isReady ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                .font(.system(size: 12, weight: .bold))
-                .foregroundStyle(isReady ? themeManager.perfolioTheme.success : Color.orange)
-            Text(isReady ? "\(title) ready" : "\(title) key missing")
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                .foregroundStyle(themeManager.perfolioTheme.textSecondary)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(themeManager.perfolioTheme.primaryBackground)
-        )
     }
     
     private func featureItem(icon: String, text: String) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(themeManager.perfolioTheme.tintColor)
                 .frame(width: 20)
             Text(text)
@@ -375,13 +160,13 @@ struct DepositBuyView: View {
     
     // MARK: - Buy Gold with Fiat (Unified Flow)
     
-    private var buyFiatToUSDCCard: some View {
+    private var buyFiatToUSDTCard: some View {
         PerFolioCard {
             VStack(alignment: .leading, spacing: 20) {
                 PerFolioSectionHeader(
                     icon: "\(currencyIcon(for: viewModel.selectedFiatCurrency)).circle.fill",
                     title: "Deposit with \(viewModel.selectedFiatCurrency.rawValue)",
-                    subtitle: "Buy USDC with your local currency"
+                    subtitle: "Buy USDT with your local currency"
                 )
                 
                 Divider()
@@ -439,9 +224,9 @@ struct DepositBuyView: View {
         }
     }
     
-    // MARK: - Simple USDC Quote Card (Fiat → USDC)
+    // MARK: - Simple USDT Quote Card (Fiat → USDT)
     
-    private func simpleUSDCQuoteCard(_ quote: OnMetaService.Quote) -> some View {
+    private func simpleUSDTQuoteCard(_ quote: OnMetaService.Quote) -> some View {
         PerFolioCard {
             VStack(alignment: .leading, spacing: 20) {
                 HStack {
@@ -468,18 +253,18 @@ struct DepositBuyView: View {
                 Divider()
                     .background(themeManager.perfolioTheme.border)
                 
-                    // You'll receive - Big USDC number
-                    VStack(spacing: 8) {
-                        Text("You'll Receive")
-                            .font(.system(size: 14, weight: .medium, design: .rounded))
+                // You'll receive - Big USDT number
+                VStack(spacing: 8) {
+                    Text("You'll Receive")
+                        .font(.system(size: 14, weight: .medium, design: .rounded))
                         .foregroundStyle(themeManager.perfolioTheme.textSecondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        Text(CurrencyFormatter.formatDecimal(quote.usdcAmount))
+                        Text(CurrencyFormatter.formatDecimal(quote.usdtAmount))
                             .font(.system(size: 40, weight: .bold, design: .rounded))
                             .foregroundStyle(themeManager.perfolioTheme.textPrimary)
-                        Text("USDC")
+                        Text("USDT")
                             .font(.system(size: 24, weight: .semibold, design: .rounded))
                             .foregroundStyle(themeManager.perfolioTheme.tintColor)
                     }
@@ -841,14 +626,14 @@ struct DepositBuyView: View {
         }
     }
     
-    // MARK: - Swap Module (USDC → PAXG)
+    // MARK: - Swap Module (USDT → PAXG)
     
     private var goldPurchaseCard: some View {
         PerFolioCard {
             VStack(alignment: .leading, spacing: 16) {
                 PerFolioSectionHeader(
                     icon: "arrow.2.squarepath",
-                    title: "Swap USDC to PAXG",
+                    title: "Swap USDT to PAXG",
                     subtitle: "Convert your stablecoins to tokenized gold"
                 )
                 
@@ -857,7 +642,7 @@ struct DepositBuyView: View {
                 
                 // Balances row
                 HStack(spacing: 16) {
-                    balanceItem(symbol: "USDC", balance: viewModel.formattedUSDCBalance)
+                    balanceItem(symbol: "USDT", balance: viewModel.formattedUSDTBalance)
                     balanceItem(symbol: "PAXG", balance: viewModel.formattedPAXGBalance)
                 }
                 
@@ -877,13 +662,13 @@ struct DepositBuyView: View {
                 .background(themeManager.perfolioTheme.primaryBackground.opacity(0.5))
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 
-                // USDC amount input
+                // USDT amount input
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("USDC Amount")
+                    Text("USDT Amount")
                         .font(.system(size: 14, weight: .medium, design: .rounded))
                         .foregroundStyle(themeManager.perfolioTheme.textSecondary)
                     
-                    TextField("0.00", text: $viewModel.usdcAmount)
+                    TextField("0.00", text: $viewModel.usdtAmount)
                         .keyboardType(.decimalPad)
                         .font(.system(size: 18, weight: .semibold, design: .rounded))
                         .foregroundStyle(themeManager.perfolioTheme.textPrimary)
@@ -895,14 +680,14 @@ struct DepositBuyView: View {
                     HStack(spacing: 8) {
                         ForEach(["25%", "50%", "75%", "Max"], id: \.self) { preset in
                             PerFolioPresetButton(preset, isSelected: false) {
-                                setUSDCPreset(preset)
+                                setUSDTPreset(preset)
                             }
                         }
                     }
                 }
                 
                 // Estimated PAXG output
-                if !viewModel.usdcAmount.isEmpty, viewModel.goldPrice > 0 {
+                if !viewModel.usdtAmount.isEmpty, viewModel.goldPrice > 0 {
                     HStack {
                         Text("You will receive")
                             .font(.system(size: 14, weight: .medium, design: .rounded))
@@ -931,7 +716,7 @@ struct DepositBuyView: View {
                         Image(systemName: "arrow.triangle.swap")
                             .font(.system(size: 12))
                             .foregroundStyle(themeManager.perfolioTheme.tintColor)
-                        Text("Powered by 0x Swap")
+                        Text("Powered by 1inch DEX")
                             .font(.system(size: 13, weight: .medium, design: .rounded))
                             .foregroundStyle(themeManager.perfolioTheme.textSecondary)
                     }
@@ -966,9 +751,9 @@ struct DepositBuyView: View {
                     }
                 }
             case .needsApproval:
-                PerFolioButton("APPROVE USDC") {
+                PerFolioButton("APPROVE USDT") {
                     Task {
-                        await viewModel.approveUSDC()
+                        await viewModel.approveUSDT()
                     }
                 }
             case .approving:
@@ -1020,24 +805,24 @@ struct DepositBuyView: View {
         }
     }
     
-    private func setUSDCPreset(_ preset: String) {
-        guard viewModel.usdcBalance > 0 else { return }
+    private func setUSDTPreset(_ preset: String) {
+        guard viewModel.usdtBalance > 0 else { return }
         
         let amount: Decimal
         switch preset {
         case "25%":
-            amount = viewModel.usdcBalance * 0.25
+            amount = viewModel.usdtBalance * 0.25
         case "50%":
-            amount = viewModel.usdcBalance * 0.50
+            amount = viewModel.usdtBalance * 0.50
         case "75%":
-            amount = viewModel.usdcBalance * 0.75
+            amount = viewModel.usdtBalance * 0.75
         case "Max":
-            amount = viewModel.usdcBalance
+            amount = viewModel.usdtBalance
         default:
             return
         }
         
-        viewModel.usdcAmount = String(format: "%.2f", NSDecimalNumber(decimal: amount).doubleValue)
+        viewModel.usdtAmount = String(format: "%.2f", NSDecimalNumber(decimal: amount).doubleValue)
     }
     
     // MARK: - How It Works
@@ -1050,8 +835,8 @@ struct DepositBuyView: View {
                     .foregroundStyle(themeManager.perfolioTheme.textPrimary)
                 
                 VStack(alignment: .leading, spacing: 12) {
-                    stepRow(number: "1", title: "Buy USDC", description: "Purchase USDC using INR via UPI or bank transfer")
-                    stepRow(number: "2", title: "Swap for PAXG", description: "Convert USDC to tokenized gold (PAXG)")
+                    stepRow(number: "1", title: "Buy USDT", description: "Purchase USDT using INR via UPI or bank transfer")
+                    stepRow(number: "2", title: "Swap for PAXG", description: "Convert USDT to tokenized gold (PAXG)")
                     stepRow(number: "3", title: "Use as Collateral", description: "Borrow against your gold holdings")
                 }
                 
@@ -1087,25 +872,6 @@ struct DepositBuyView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-    }
-}
-
-// MARK: - Helpers
-
-private extension Decimal {
-    func rounded(scale: Int) -> Decimal {
-        var value = self
-        var result = Decimal()
-        NSDecimalRound(&result, &value, scale, .plain)
-        return result
-    }
-    
-    func formatted(maxFractionDigits: Int = 6) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 0
-        formatter.maximumFractionDigits = maxFractionDigits
-        return formatter.string(from: self as NSNumber) ?? "0"
     }
 }
 

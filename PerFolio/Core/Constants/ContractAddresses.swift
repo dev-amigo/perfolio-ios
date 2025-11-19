@@ -13,8 +13,8 @@ enum ContractAddresses {
     
     // MARK: - DEX Routers
     
-    /// 0x Exchange Proxy on Ethereum Mainnet
-    static let zeroExExchangeProxy = "0xdef1c0ded9bec7f1a1670819833240f027b25eff"
+    /// 1inch v6 Aggregation Router on Ethereum Mainnet
+    static let oneInchRouterV6 = "0x111111125421ca6dc452d289314280a0f8842a65"
     
     /// Uniswap V3 Router on Ethereum Mainnet
     static let uniswapV3Router = "0xE592427A0AEce92De3Edee1F18E0157C05861564"
@@ -51,7 +51,7 @@ enum ServiceConstants {
     /// OnMeta estimated time for transaction
     static let onMetaEstimatedTime = "5-15 minutes"
     
-    /// OnMeta default exchange rate (1 USDC = ₹92.5)
+    /// OnMeta default exchange rate (1 USDT = ₹92.5)
     /// Note: In production, fetch from OnMeta quote API
     static let onMetaDefaultExchangeRate: Decimal = 92.5
     
@@ -71,7 +71,7 @@ enum ServiceConstants {
     static let estimatedGasCost = "~$5-10"
     
     /// Default swap route description
-    static let defaultSwapRoute = "USDC → PAXG (0x routed)"
+    static let defaultSwapRoute = "USDT → WETH → PAXG (Uniswap V3)"
     
     // MARK: - Timeouts
     
@@ -90,3 +90,4 @@ enum ServiceConstants {
     /// Balance refresh delay (3 seconds)
     static let balanceRefreshDelay: UInt64 = 3_000_000_000
 }
+

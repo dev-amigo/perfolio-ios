@@ -9,7 +9,6 @@ struct PerFolioShellView: View {
         case dashboard = 0
         case wallet = 1
         case borrow = 2
-        case loans = 3
     }
     
     var body: some View {
@@ -37,12 +36,6 @@ struct PerFolioShellView: View {
                         Label("Borrow", systemImage: "banknote.fill")
                     }
                     .tag(Tab.borrow)
-                
-                ActiveLoansView()
-                    .tabItem {
-                        Label("Active Loans", systemImage: "doc.plaintext")
-                    }
-                    .tag(Tab.loans)
             }
             .tint(themeManager.perfolioTheme.tintColor)
         }
@@ -53,5 +46,6 @@ struct PerFolioShellView: View {
     PerFolioShellView()
         .environmentObject(ThemeManager())
 }
+
 
 

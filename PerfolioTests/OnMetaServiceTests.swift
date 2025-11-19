@@ -81,7 +81,7 @@ final class OnMetaServiceTests: XCTestCase {
         let quote = try await sut.getQuote(inrAmount: "1000")
         
         XCTAssertEqual(quote.inrAmount, 1000)
-        XCTAssertGreaterThan(quote.usdcAmount, 0)
+        XCTAssertGreaterThan(quote.usdtAmount, 0)
         XCTAssertGreaterThan(quote.exchangeRate, 0)
         XCTAssertGreaterThan(quote.providerFee, 0)
         XCTAssertFalse(quote.estimatedTime.isEmpty)
@@ -95,15 +95,15 @@ final class OnMetaServiceTests: XCTestCase {
         XCTAssertEqual(quote.providerFee, expectedFee)
     }
     
-    func testGetQuote_CalculatesUSDCAmountCorrectly() async throws {
+    func testGetQuote_CalculatesUSDTAmountCorrectly() async throws {
         let quote = try await sut.getQuote(inrAmount: "1000")
         
-        // USDC = (INR - fee) / exchange_rate
+        // USDT = (INR - fee) / exchange_rate
         let expectedFee: Decimal = 1000 * 0.02
         let netAmount = 1000 - expectedFee
-        let expectedUSDC = netAmount / ServiceConstants.onMetaDefaultExchangeRate
+        let expectedUSDT = netAmount / ServiceConstants.onMetaDefaultExchangeRate
         
-        XCTAssertEqual(quote.usdcAmount, expectedUSDC)
+        XCTAssertEqual(quote.usdtAmount, expectedUSDT)
     }
     
     func testGetQuote_InvalidAmount_ThrowsError() async {
@@ -169,7 +169,7 @@ final class OnMetaServiceTests: XCTestCase {
         XCTAssertTrue(url.absoluteString.contains("walletAddress=0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"))
         XCTAssertTrue(url.absoluteString.contains("fiatAmount=1000"))
         XCTAssertTrue(url.absoluteString.contains("fiatType=INR"))
-        XCTAssertTrue(url.absoluteString.contains("tokenSymbol=USDC"))
+        XCTAssertTrue(url.absoluteString.contains("tokenSymbol=USDT"))
         XCTAssertTrue(url.absoluteString.contains("chainId=1"))
         XCTAssertTrue(url.absoluteString.contains("offRamp=disabled"))
     }
@@ -217,7 +217,7 @@ final class OnMetaServiceTests: XCTestCase {
     func testQuote_DisplayUsdtAmount_FormatsCorrectly() async throws {
         let quote = try await sut.getQuote(inrAmount: "1000")
         XCTAssertTrue(quote.displayUsdtAmount.contains("~"))
-        XCTAssertTrue(quote.displayUsdtAmount.contains("USDC"))
+        XCTAssertTrue(quote.displayUsdtAmount.contains("USDT"))
     }
     
     func testQuote_DisplayFee_FormatsCorrectly() async throws {
@@ -227,7 +227,7 @@ final class OnMetaServiceTests: XCTestCase {
     
     func testQuote_DisplayRate_FormatsCorrectly() async throws {
         let quote = try await sut.getQuote(inrAmount: "1000")
-        XCTAssertTrue(quote.displayRate.contains("1 USDC = ₹"))
+        XCTAssertTrue(quote.displayRate.contains("1 USDT = ₹"))
     }
     
     // MARK: - Reset Tests
@@ -259,3 +259,4 @@ final class OnMetaServiceTests: XCTestCase {
         XCTAssertEqual(quote.inrAmount, 100_000)
     }
 }
+

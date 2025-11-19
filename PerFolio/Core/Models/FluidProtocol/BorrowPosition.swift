@@ -208,50 +208,6 @@ extension BorrowPosition {
         )
     }
     
-    /// Create a position from locally calculated borrow metrics.
-    static func from(
-        metrics: BorrowMetrics,
-        nftId: String,
-        owner: String,
-        vaultAddress: String
-    ) -> BorrowPosition {
-        let collateralValueUSD = metrics.collateralValueUSD
-        let debtValueUSD = metrics.borrowAmount
-        let liquidationPrice = metrics.liquidationPrice
-        let availableToBorrowUSD = max(metrics.maxBorrowableUSD - metrics.borrowAmount, 0)
-        let healthFactor = metrics.healthFactor
-        let currentLTV = metrics.currentLTV
-        
-        let status: PositionStatus
-        if healthFactor <= 1.0 {
-            status = .liquidated
-        } else if healthFactor <= 1.2 {
-            status = .danger
-        } else if healthFactor <= 1.5 {
-            status = .warning
-        } else {
-            status = .safe
-        }
-        
-        return BorrowPosition(
-            id: "\(vaultAddress)-\(nftId)",
-            nftId: nftId,
-            owner: owner,
-            vaultAddress: vaultAddress,
-            collateralAmount: metrics.collateralAmount,
-            borrowAmount: metrics.borrowAmount,
-            collateralValueUSD: collateralValueUSD,
-            debtValueUSD: debtValueUSD,
-            healthFactor: healthFactor,
-            currentLTV: currentLTV,
-            liquidationPrice: liquidationPrice,
-            availableToBorrowUSD: availableToBorrowUSD,
-            status: status,
-            createdAt: Date(),
-            lastUpdatedAt: Date()
-        )
-    }
-    
     // MARK: - Calculation Helpers
     
     private static func hexToDecimal(_ hex: String, decimals: Int) -> Decimal {
@@ -320,3 +276,4 @@ extension BorrowPosition {
         )
     }
 }
+

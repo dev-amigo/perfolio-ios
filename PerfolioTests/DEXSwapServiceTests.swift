@@ -9,7 +9,7 @@ final class DEXSwapServiceTests: XCTestCase {
     
     override func setUp() {
         super.setUp()
-        sut = DEXSwapService(zeroExAPIKey: "test_api_key")
+        sut = DEXSwapService(oneInchAPIKey: "test_api_key")
         cancellables = Set<AnyCancellable>()
     }
     
@@ -28,10 +28,10 @@ final class DEXSwapServiceTests: XCTestCase {
     
     // MARK: - Token Tests
     
-    func testToken_USDC_HasCorrectAddress() {
-        XCTAssertEqual(DEXSwapService.Token.usdc.address, ContractAddresses.usdc)
-        XCTAssertEqual(DEXSwapService.Token.usdc.symbol, "USDC")
-        XCTAssertEqual(DEXSwapService.Token.usdc.decimals, 6)
+    func testToken_USDT_HasCorrectAddress() {
+        XCTAssertEqual(DEXSwapService.Token.usdt.address, ContractAddresses.usdt)
+        XCTAssertEqual(DEXSwapService.Token.usdt.symbol, "USDT")
+        XCTAssertEqual(DEXSwapService.Token.usdt.decimals, 6)
     }
     
     func testToken_PAXG_HasCorrectAddress() {
@@ -44,28 +44,28 @@ final class DEXSwapServiceTests: XCTestCase {
     
     func testSwapQuote_DisplayFromAmount_FormatsCorrectly() {
         let quote = DEXSwapService.SwapQuote(
-            fromToken: .usdc,
+            fromToken: .usdt,
             toToken: .paxg,
             fromAmount: 1000.50,
             toAmount: 0.5,
             estimatedGas: "~$5-10",
             priceImpact: 0.1,
-            route: "USDC → WETH → PAXG"
+            route: "USDT → WETH → PAXG"
         )
         
         XCTAssertTrue(quote.displayFromAmount.contains("1,000.5"))
-        XCTAssertTrue(quote.displayFromAmount.contains("USDC"))
+        XCTAssertTrue(quote.displayFromAmount.contains("USDT"))
     }
     
     func testSwapQuote_DisplayToAmount_FormatsCorrectly() {
         let quote = DEXSwapService.SwapQuote(
-            fromToken: .usdc,
+            fromToken: .usdt,
             toToken: .paxg,
             fromAmount: 1000,
             toAmount: 0.025,
             estimatedGas: "~$5-10",
             priceImpact: 0.1,
-            route: "USDC → WETH → PAXG"
+            route: "USDT → WETH → PAXG"
         )
         
         XCTAssertTrue(quote.displayToAmount.contains("0.025"))
@@ -74,13 +74,13 @@ final class DEXSwapServiceTests: XCTestCase {
     
     func testSwapQuote_DisplayPriceImpact_FormatsCorrectly() {
         let quote = DEXSwapService.SwapQuote(
-            fromToken: .usdc,
+            fromToken: .usdt,
             toToken: .paxg,
             fromAmount: 1000,
             toAmount: 0.5,
             estimatedGas: "~$5-10",
             priceImpact: 2.5,
-            route: "USDC → WETH → PAXG"
+            route: "USDT → WETH → PAXG"
         )
         
         XCTAssertTrue(quote.displayPriceImpact.contains("2.5"))
@@ -89,13 +89,13 @@ final class DEXSwapServiceTests: XCTestCase {
     
     func testSwapQuote_IsPriceImpactHigh_LowImpact() {
         let quote = DEXSwapService.SwapQuote(
-            fromToken: .usdc,
+            fromToken: .usdt,
             toToken: .paxg,
             fromAmount: 1000,
             toAmount: 0.5,
             estimatedGas: "~$5-10",
             priceImpact: 2.0,
-            route: "USDC → WETH → PAXG"
+            route: "USDT → WETH → PAXG"
         )
         
         XCTAssertFalse(quote.isPriceImpactHigh)
@@ -103,13 +103,13 @@ final class DEXSwapServiceTests: XCTestCase {
     
     func testSwapQuote_IsPriceImpactHigh_HighImpact() {
         let quote = DEXSwapService.SwapQuote(
-            fromToken: .usdc,
+            fromToken: .usdt,
             toToken: .paxg,
             fromAmount: 1000,
             toAmount: 0.5,
             estimatedGas: "~$5-10",
             priceImpact: 5.0,
-            route: "USDC → WETH → PAXG"
+            route: "USDT → WETH → PAXG"
         )
         
         XCTAssertTrue(quote.isPriceImpactHigh)
@@ -119,7 +119,7 @@ final class DEXSwapServiceTests: XCTestCase {
     
     func testSwapError_InsufficientBalance_HasCorrectDescription() {
         let error = DEXSwapService.SwapError.insufficientBalance
-        XCTAssertEqual(error.errorDescription, "Insufficient USDC balance")
+        XCTAssertEqual(error.errorDescription, "Insufficient USDT balance")
     }
     
     func testSwapError_InvalidAmount_HasCorrectDescription() {
@@ -148,13 +148,13 @@ final class DEXSwapServiceTests: XCTestCase {
     func testReset_ClearsQuoteAndApprovalState() {
         // Set some state
         let quote = DEXSwapService.SwapQuote(
-            fromToken: .usdc,
+            fromToken: .usdt,
             toToken: .paxg,
             fromAmount: 1000,
             toAmount: 0.5,
             estimatedGas: "~$5-10",
             priceImpact: 0.1,
-            route: "USDC → WETH → PAXG"
+            route: "USDT → WETH → PAXG"
         )
         sut.currentQuote = quote
         sut.approvalState = .approved
@@ -171,14 +171,14 @@ final class DEXSwapServiceTests: XCTestCase {
     
     func testSwapParams_InitializesCorrectly() {
         let params = DEXSwapService.SwapParams(
-            fromToken: .usdc,
+            fromToken: .usdt,
             toToken: .paxg,
             amount: 1000,
             slippageTolerance: 0.5,
             fromAddress: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
         )
         
-        XCTAssertEqual(params.fromToken.symbol, "USDC")
+        XCTAssertEqual(params.fromToken.symbol, "USDT")
         XCTAssertEqual(params.toToken.symbol, "PAXG")
         XCTAssertEqual(params.amount, 1000)
         XCTAssertEqual(params.slippageTolerance, 0.5)
@@ -188,17 +188,17 @@ final class DEXSwapServiceTests: XCTestCase {
     // MARK: - Constants Validation Tests
     
     func testServiceConstants_ContractAddresses() {
-        XCTAssertFalse(ContractAddresses.usdc.isEmpty)
+        XCTAssertFalse(ContractAddresses.usdt.isEmpty)
         XCTAssertFalse(ContractAddresses.paxg.isEmpty)
-        XCTAssertFalse(ContractAddresses.zeroExExchangeProxy.isEmpty)
+        XCTAssertFalse(ContractAddresses.oneInchRouterV6.isEmpty)
         
-        XCTAssertTrue(ContractAddresses.usdc.hasPrefix("0x"))
+        XCTAssertTrue(ContractAddresses.usdt.hasPrefix("0x"))
         XCTAssertTrue(ContractAddresses.paxg.hasPrefix("0x"))
-        XCTAssertTrue(ContractAddresses.zeroExExchangeProxy.hasPrefix("0x"))
+        XCTAssertTrue(ContractAddresses.oneInchRouterV6.hasPrefix("0x"))
         
-        XCTAssertEqual(ContractAddresses.usdc.count, 42) // 0x + 40 hex chars
+        XCTAssertEqual(ContractAddresses.usdt.count, 42) // 0x + 40 hex chars
         XCTAssertEqual(ContractAddresses.paxg.count, 42)
-        XCTAssertEqual(ContractAddresses.zeroExExchangeProxy.count, 42)
+        XCTAssertEqual(ContractAddresses.oneInchRouterV6.count, 42)
     }
     
     func testServiceConstants_DEXParameters() {
@@ -207,10 +207,6 @@ final class DEXSwapServiceTests: XCTestCase {
         XCTAssertEqual(ServiceConstants.highPriceImpactThreshold, 3.0)
         XCTAssertFalse(ServiceConstants.estimatedGasCost.isEmpty)
         XCTAssertFalse(ServiceConstants.defaultSwapRoute.isEmpty)
-    }
-    
-    func testServiceConstants_DefaultRouteMentions0x() {
-        XCTAssertTrue(ServiceConstants.defaultSwapRoute.lowercased().contains("0x"))
     }
     
     func testServiceConstants_Timeouts() {
@@ -251,3 +247,4 @@ private extension String {
         return String(repeating: element, count: padCount) + self
     }
 }
+

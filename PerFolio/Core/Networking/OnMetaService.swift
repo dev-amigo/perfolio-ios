@@ -2,7 +2,7 @@ import Foundation
 import SafariServices
 import Combine
 
-/// OnMeta on-ramp service for INR → USDC conversion
+/// OnMeta on-ramp service for INR → USDT conversion
 /// Based on the web app's OnMeta adapter implementation
 final class OnMetaService: ObservableObject {
     
@@ -31,7 +31,7 @@ final class OnMetaService: ObservableObject {
     
     struct Quote {
         let inrAmount: Decimal
-        let usdcAmount: Decimal
+        let usdtAmount: Decimal
         let exchangeRate: Decimal
         let providerFee: Decimal
         let estimatedTime: String
@@ -41,7 +41,7 @@ final class OnMetaService: ObservableObject {
         }
         
         var displayUsdtAmount: String {
-            "~\(CurrencyFormatter.formatToken(usdcAmount, symbol: "USDC"))"
+            "~\(CurrencyFormatter.formatToken(usdtAmount, symbol: "USDT"))"
         }
         
         var displayFee: String {
@@ -49,7 +49,7 @@ final class OnMetaService: ObservableObject {
         }
         
         var displayRate: String {
-            "1 USDC = ₹\(CurrencyFormatter.formatDecimal(exchangeRate))"
+            "1 USDT = ₹\(CurrencyFormatter.formatDecimal(exchangeRate))"
         }
     }
     
@@ -104,7 +104,7 @@ final class OnMetaService: ObservableObject {
         return CurrencyFormatter.validateAmount(decimal, min: minInrAmount, max: maxInrAmount)
     }
     
-    /// Get quote for INR → USDC conversion
+    /// Get quote for INR → USDT conversion
     /// Note: This is a simplified quote calculation. In production, you'd fetch this from OnMeta API.
     func getQuote(inrAmount: String) async throws -> Quote {
         AppLogger.log("📊 Getting quote for INR amount: \(inrAmount)", category: "onmeta")
@@ -129,11 +129,11 @@ final class OnMetaService: ObservableObject {
         let feePercentage = ServiceConstants.onMetaFeePercentage
         let providerFee = amount * feePercentage
         let netAmount = amount - providerFee
-        let usdcAmount = netAmount / exchangeRate
+        let usdtAmount = netAmount / exchangeRate
         
         let quote = Quote(
             inrAmount: amount,
-            usdcAmount: usdcAmount,
+            usdtAmount: usdtAmount,
             exchangeRate: exchangeRate,
             providerFee: providerFee,
             estimatedTime: ServiceConstants.onMetaEstimatedTime
@@ -166,7 +166,7 @@ final class OnMetaService: ObservableObject {
             URLQueryItem(name: "walletAddress", value: walletAddress),
             URLQueryItem(name: "fiatAmount", value: "\(amount)"),
             URLQueryItem(name: "fiatType", value: "INR"),
-            URLQueryItem(name: "tokenSymbol", value: "USDC"),
+            URLQueryItem(name: "tokenSymbol", value: "USDT"),
             URLQueryItem(name: "chainId", value: "\(config.chainId)"),
             URLQueryItem(name: "offRamp", value: "disabled")
         ]
@@ -185,3 +185,4 @@ final class OnMetaService: ObservableObject {
         error = nil
     }
 }
+

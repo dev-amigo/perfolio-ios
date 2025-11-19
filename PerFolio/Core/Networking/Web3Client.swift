@@ -111,35 +111,32 @@ actor Web3Client {
         fallbackRPC: String? = nil,
         session: URLSession = .shared
     ) {
-        // Get RPC URLs from configuration
-        let privyRPC = Bundle.main.object(forInfoDictionaryKey: "AGPrivyRPCURL") as? String ?? ""
-        let configuredPrimary = Bundle.main.object(forInfoDictionaryKey: "AGEthereumRPCPrimary") as? String ?? ""
-        let viteAlchemyKey = Bundle.main.object(forInfoDictionaryKey: "VITE_ALCHEMY_API_KEY") as? String ?? ""
-        let configuredFallback = Bundle.main.object(forInfoDictionaryKey: "AGEthereumRPCFallback") as? String ?? ""
+        let bundle = Bundle.main
+        let alchemyValue = bundle.object(forInfoDictionaryKey: "AGAlchemyAPIKey") as? String ?? ""
+        let derivedAlchemyRPC = Web3Client.deriveAlchemyRPCURL(from: alchemyValue)
+        let configuredFallback = bundle.object(forInfoDictionaryKey: "AGEthereumRPCFallback") as? String ?? ""
         let defaultFallback = "https://ethereum.publicnode.com"
         
-        // Use LlamaRPC as primary (fast, reliable, free)
-        // Privy RPC attempted but not available for general JSON-RPC
-        let llamaRPC = "https://eth.llamarpc.com"
+        let resolvedFallback = fallbackRPC ?? (!configuredFallback.isEmpty ? configuredFallback : defaultFallback)
+        let resolvedPrimary = primaryRPC ?? derivedAlchemyRPC ?? resolvedFallback
         
-        // Build primary: explicit override > configured primary > derived from VITE_ALCHEMY_API_KEY > llamaRPC
-        let derivedAlchemy = viteAlchemyKey.isEmpty
-            ? ""
-            : (viteAlchemyKey.starts(with: "http")
-                ? viteAlchemyKey
-                : "https://eth-mainnet.g.alchemy.com/v2/\(viteAlchemyKey)")
-        
-        self.primaryRPC = primaryRPC
-            ?? (!configuredPrimary.isEmpty ? configuredPrimary : nil)
-            ?? (!derivedAlchemy.isEmpty ? derivedAlchemy : nil)
-            ?? llamaRPC
-        self.fallbackRPC = fallbackRPC ?? (!configuredFallback.isEmpty ? configuredFallback : defaultFallback)
+        self.primaryRPC = resolvedPrimary
+        self.fallbackRPC = resolvedFallback
         self.session = session
         
         // Log configuration
         AppLogger.log("🔗 Web3Client initialized", category: "web3")
+        if let derivedAlchemyRPC {
+            AppLogger.log("   Alchemy RPC configured: \(derivedAlchemyRPC)", category: "web3")
+        } else {
+            AppLogger.log("   No Alchemy RPC configured, defaulting to fallback transport", category: "web3")
+        }
         AppLogger.log("   Primary RPC: \(self.primaryRPC)", category: "web3")
-        AppLogger.log("   Fallback RPC: \(self.fallbackRPC)", category: "web3")
+        if self.fallbackRPC != self.primaryRPC {
+            AppLogger.log("   Fallback RPC: \(self.fallbackRPC)", category: "web3")
+        } else {
+            AppLogger.log("   Fallback RPC matches primary (single transport)", category: "web3")
+        }
         AppLogger.log("💡 Gas sponsorship for transactions will use Privy SDK", category: "web3")
     }
     
@@ -229,5 +226,18 @@ actor Web3Client {
         }
         
         return result
+    }
+    
+    private static func deriveAlchemyRPCURL(from rawValue: String) -> String? {
+        let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return nil
+        }
+        
+        if trimmed.lowercased().hasPrefix("http") {
+            return trimmed
+        }
+        
+        return "https://eth-mainnet.g.alchemy.com/v2/\(trimmed)"
     }
 }

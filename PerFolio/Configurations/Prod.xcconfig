@@ -3,19 +3,16 @@ API_BASE_URL = https:/$()/perfolio.ai
 PRIVY_APP_ID = cmhenc7hj004ijy0c311hbf2z
 PRIVY_APP_CLIENT_ID = client-WY6STfJ4XQDcAbqTXDZZ4buZZPMDma37uaohXSTE77Dqq
 PRIVY_JWKS_URL = https:/$()/auth.privy.io/api/v1/apps/cmhenc7hj004ijy0c311hbf2z/jwks.json
+
+// Ethereum RPC (mirrors web wagmi config: optional Alchemy + public fallback)
+ALCHEMY_API_KEY = 7_GAP2fRALM9SC2gQo8qf
 ETHEREUM_RPC_FALLBACK = https:/$()/ethereum.publicnode.com
 DEEP_LINK_SCHEME = perfolio
 DEFAULT_OAUTH_PROVIDER = email
 
 // OnMeta Configuration (INR on-ramp)
 ONMETA_API_KEY = 3adc6318-8e68-41b8-8d39-dcb354eb25ce
-TRANSAK_API_KEY = 4f4d1fff-3bba-4749-aa07-11d0667adbf4
-ZEROX_SWAP_KEY = 500e6659-f085-4d26-9fb4-933eea6d7170
-VITE_ALCHEMY_API_KEY = 7_GAP2fRALM9SC2gQo8qf
-
 ONMETA_BASE_URL = https:/$()/platform.onmeta.in
 
-ALCHEMY_RPC_PRIMARY = https:/$()/eth-mainnet.g.alchemy.com/v2/$(VITE_ALCHEMY_API_KEY)
-
-// Legacy 1inch key (unused after moving to 0x)
+// 1inch DEX Configuration (for USDT→PAXG swaps)
 ONEINCH_API_KEY = your_1inch_api_key_here

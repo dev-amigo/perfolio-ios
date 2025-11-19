@@ -75,10 +75,10 @@
 	<string>$(PRIVY_APP_CLIENT_ID)</string>
 	<key>AGPrivyJWKSURL</key>
 	<string>$(PRIVY_JWKS_URL)</string>
+	<key>AGAlchemyAPIKey</key>
+	<string>$(ALCHEMY_API_KEY)</string>
 	<key>AGEthereumRPCFallback</key>
 	<string>$(ETHEREUM_RPC_FALLBACK)</string>
-	<key>AGEthereumRPCPrimary</key>
-	<string>$(ALCHEMY_RPC_PRIMARY)</string>
 	<key>AGDeepLinkScheme</key>
 	<string>$(DEEP_LINK_SCHEME)</string>
 	<key>AGDefaultOAuthProvider</key>
@@ -87,10 +87,6 @@
 	<string>$(ONMETA_API_KEY)</string>
 	<key>AGOnMetaBaseURL</key>
 	<string>$(ONMETA_BASE_URL)</string>
-	<key>AG0xAPIKey</key>
-	<string>$(ZEROX_SWAP_KEY)</string>
-	<key>AGTransakAPIKey</key>
-	<string>$(TRANSAK_API_KEY)</string>
 	<key>AG1InchAPIKey</key>
 	<string>$(ONEINCH_API_KEY)</string>
 </dict>

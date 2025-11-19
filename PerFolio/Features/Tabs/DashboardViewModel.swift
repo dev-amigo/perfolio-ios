@@ -13,7 +13,7 @@ final class DashboardViewModel: ObservableObject {
     
     @Published var walletAddress: String?
     @Published var paxgBalance: TokenBalance?
-    @Published var usdcBalance: TokenBalance?
+    @Published var usdtBalance: TokenBalance?
     @Published var loadingState: LoadingState = .idle
     
     private let web3Client: Web3Client
@@ -71,7 +71,7 @@ final class DashboardViewModel: ObservableObject {
             AppLogger.log("Fetching balances for \(address)", category: "dashboard")
             
             let balances = try await erc20Contract.balancesOf(
-                tokens: [.paxg, .usdc],
+                tokens: [.paxg, .usdt],
                 address: address
             )
             
@@ -80,8 +80,8 @@ final class DashboardViewModel: ObservableObject {
                 switch balance.symbol {
                 case "PAXG":
                     self.paxgBalance = balance
-                case "USDC":
-                    self.usdcBalance = balance
+                case "USDT":
+                    self.usdtBalance = balance
                 default:
                     break
                 }
@@ -116,8 +116,8 @@ final class DashboardViewModel: ObservableObject {
         paxgBalance?.formattedBalance ?? "0.00"
     }
     
-    var usdcFormattedBalance: String {
-        usdcBalance?.formattedBalance ?? "0.00"
+    var usdtFormattedBalance: String {
+        usdtBalance?.formattedBalance ?? "0.00"
     }
     
     var paxgUSDValue: String {
@@ -133,9 +133,9 @@ final class DashboardViewModel: ObservableObject {
         return formatter.string(from: usdValue as NSDecimalNumber) ?? "$0.00"
     }
     
-    var usdcUSDValue: String {
-        // USDC is 1:1 with USD
-        guard let balance = usdcBalance else { return "$0.00" }
+    var usdtUSDValue: String {
+        // USDT is 1:1 with USD
+        guard let balance = usdtBalance else { return "$0.00" }
         
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
@@ -144,13 +144,13 @@ final class DashboardViewModel: ObservableObject {
     }
     
     var totalPortfolioValue: String {
-        guard let paxg = paxgBalance, let usdc = usdcBalance else {
+        guard let paxg = paxgBalance, let usdt = usdtBalance else {
             return "$0.00"
         }
         
         let goldPrice: Decimal = 2400
         let paxgValue = paxg.decimalBalance * goldPrice
-        let totalValue = paxgValue + usdc.decimalBalance
+        let totalValue = paxgValue + usdt.decimalBalance
         
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
@@ -158,3 +158,4 @@ final class DashboardViewModel: ObservableObject {
         return formatter.string(from: totalValue as NSDecimalNumber) ?? "$0.00"
     }
 }
+

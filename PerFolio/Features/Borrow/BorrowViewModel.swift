@@ -276,3 +276,4 @@ final class BorrowViewModel: ObservableObject {
         return formatter.string(from: value as NSDecimalNumber) ?? "0"
     }
 }
+
