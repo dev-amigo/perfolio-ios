@@ -16,6 +16,7 @@ struct EnvironmentConfiguration: Equatable {
     let apiBaseURL: URL
     let privyAppID: String
     let privyAppClientID: String
+    let privyAppSecret: String
     let deepLinkScheme: String
     let privyJWKSURL: URL
     let defaultOAuthProvider: String
@@ -28,6 +29,7 @@ struct EnvironmentConfiguration: Equatable {
         let apiBaseURL = URL(string: bundle.object(forInfoDictionaryKey: "AGAPIBaseURL") as? String ?? "") ?? EnvironmentConfiguration.development.apiBaseURL
         let privyAppID = bundle.object(forInfoDictionaryKey: "AGPrivyAppID") as? String ?? ""
         let privyClientID = bundle.object(forInfoDictionaryKey: "AGPrivyClientID") as? String ?? ""
+        let privyAppSecret = bundle.object(forInfoDictionaryKey: "AGPrivyAppSecret") as? String ?? ""
         let deepLinkScheme = bundle.object(forInfoDictionaryKey: "AGDeepLinkScheme") as? String ?? "amigogold"
         let defaultOAuthProvider = bundle.object(forInfoDictionaryKey: "AGDefaultOAuthProvider") as? String ?? "google"
         let jwksURLString = bundle.object(forInfoDictionaryKey: "AGPrivyJWKSURL") as? String ?? ""
@@ -47,6 +49,7 @@ struct EnvironmentConfiguration: Equatable {
             apiBaseURL: apiBaseURL,
             privyAppID: privyAppID,
             privyAppClientID: privyClientID,
+            privyAppSecret: privyAppSecret,
             deepLinkScheme: deepLinkScheme,
             privyJWKSURL: jwksURL,
             defaultOAuthProvider: defaultOAuthProvider,
@@ -63,6 +66,7 @@ struct EnvironmentConfiguration: Equatable {
         apiBaseURL: URL(string: "https://perfolio.ai")!,
         privyAppID: "cmhenc7hj004ijy0c311hbf2z",
         privyAppClientID: "client-WY6STfJ4XQDcAbqTXDZZ4buZZPMDma37uaohXSTE77Dqq",
+        privyAppSecret: "",
         deepLinkScheme: "perfolio-dev",
         privyJWKSURL: URL(string: "https://auth.privy.io/api/v1/apps/cmhenc7hj004ijy0c311hbf2z/jwks.json")!,
         defaultOAuthProvider: "email",
@@ -78,6 +82,7 @@ struct EnvironmentConfiguration: Equatable {
         apiBaseURL: URL(string: "https://perfolio.ai")!,
         privyAppID: "cmhenc7hj004ijy0c311hbf2z",
         privyAppClientID: "client-WY6STfJ4XQDcAbqTXDZZ4buZZPMDma37uaohXSTE77Dqq",
+        privyAppSecret: "",
         deepLinkScheme: "perfolio",
         privyJWKSURL: URL(string: "https://auth.privy.io/api/v1/apps/cmhenc7hj004ijy0c311hbf2z/jwks.json")!,
         defaultOAuthProvider: "email",

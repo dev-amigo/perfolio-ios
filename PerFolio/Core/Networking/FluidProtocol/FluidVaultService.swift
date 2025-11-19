@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import PrivySDK
+import CryptoKit
 
 /// Core service for interacting with Fluid Protocol vaults
 /// Handles borrow execution, position management, and state tracking
@@ -295,21 +296,17 @@ final class FluidVaultService: ObservableObject {
         AppLogger.log("   Value: \(request.value)", category: "fluid")
         
         do {
-            AppLogger.log("📤 Attempting to send transaction via Privy embedded wallet...", category: "fluid")
-            
-            let chainId = await wallet.provider.chainId
-            let unsignedTx = PrivySDK.EthereumRpcRequest.UnsignedEthTransaction(
-                from: request.from,
-                to: request.to,
-                data: request.data,
-                value: makeHexQuantity(request.value),
-                chainId: .int(chainId)
+            AppLogger.log("📤 Attempting sponsored transaction via Privy RPC...", category: "fluid")
+            guard let walletId = UserDefaults.standard.string(forKey: "userWalletId") else {
+                throw FluidVaultError.transactionFailed("Missing Privy wallet identifier")
+            }
+            let environment = EnvironmentConfiguration.current
+            let txHash = try await sendSponsoredTransaction(
+                request: request,
+                walletId: walletId,
+                environment: environment
             )
-            
-            let rpcRequest = try PrivySDK.EthereumRpcRequest.ethSendTransaction(transaction: unsignedTx)
-            let txHash = try await wallet.provider.request(rpcRequest)
-            
-            AppLogger.log("✅ Privy embedded wallet submitted transaction: \(txHash)", category: "fluid")
+            AppLogger.log("✅ Privy RPC submitted transaction: \(txHash)", category: "fluid")
             return txHash
         } catch {
             AppLogger.log("❌ Transaction signing failed: \(error)", category: "fluid")
@@ -325,20 +322,124 @@ final class FluidVaultService: ObservableObject {
         let value: String
     }
     
-    private func makeHexQuantity(_ rawValue: String) -> PrivySDK.EthereumRpcRequest.UnsignedEthTransaction.Quantity? {
-        let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else {
-            return nil
+    private func sendSponsoredTransaction(
+        request: TransactionRequest,
+        walletId: String,
+        environment: EnvironmentConfiguration
+    ) async throws -> String {
+        guard !environment.privyAppID.isEmpty,
+              !environment.privyAppSecret.isEmpty else {
+            throw FluidVaultError.transactionFailed("Privy credentials missing")
         }
         
-        let formatted: String
-        if trimmed.lowercased().hasPrefix("0x") {
-            formatted = trimmed
-        } else {
-            formatted = "0x\(trimmed)"
+        struct PrivyRPCRequest: Encodable {
+            struct Params: Encodable {
+                struct Transaction: Encodable {
+                    let from: String
+                    let to: String
+                    let data: String
+                    let value: String
+                }
+                let transaction: Transaction
+            }
+            let method: String
+            let caip2: String
+            let sponsor: Bool
+            let params: Params
         }
         
-        return .hexadecimalNumber(formatted)
+        struct PrivyRPCResponse: Decodable {
+            struct RPCError: Decodable {
+                let code: Int?
+                let message: String?
+                let data: String?
+            }
+            let result: String?
+            let error: RPCError?
+        }
+        
+        let endpointString = "https://api.privy.io/v1/wallets/\(walletId)/rpc"
+        guard let endpoint = URL(string: endpointString) else {
+            throw FluidVaultError.transactionFailed("Invalid Privy RPC URL")
+        }
+        
+        let payload = PrivyRPCRequest(
+            method: "eth_sendTransaction",
+            caip2: "eip155:1",
+            sponsor: true,
+            params: .init(
+                transaction: .init(
+                    from: request.from,
+                    to: request.to,
+                    data: request.data,
+                    value: request.value.lowercased().hasPrefix("0x") ? request.value : "0x\(request.value)"
+                )
+            )
+        )
+        
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        let body = try encoder.encode(payload)
+        
+        var urlRequest = URLRequest(url: endpoint)
+        urlRequest.httpMethod = "POST"
+        urlRequest.httpBody = body
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        urlRequest.setValue(environment.privyAppID, forHTTPHeaderField: "privy-app-id")
+        
+        if let signatureHeader = makePrivySignature(
+            appSecret: environment.privyAppSecret,
+            method: "POST",
+            path: endpoint.path,
+            body: body
+        ) {
+            urlRequest.setValue(signatureHeader.signature, forHTTPHeaderField: "privy-authorization-signature")
+            urlRequest.setValue(signatureHeader.timestamp, forHTTPHeaderField: "privy-request-timestamp")
+        }
+        
+        let credentials = "\(environment.privyAppID):\(environment.privyAppSecret)"
+        if let credentialData = credentials.data(using: .utf8) {
+            let basicToken = credentialData.base64EncodedString()
+            urlRequest.setValue("Basic \(basicToken)", forHTTPHeaderField: "Authorization")
+        }
+        
+        let (data, response) = try await URLSession.shared.data(for: urlRequest)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw FluidVaultError.transactionFailed("Invalid Privy RPC response")
+        }
+        
+        guard (200...299).contains(httpResponse.statusCode) else {
+            let message = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw FluidVaultError.transactionFailed("Privy RPC failed: \(message)")
+        }
+        
+        let rpcResponse = try JSONDecoder().decode(PrivyRPCResponse.self, from: data)
+        if let error = rpcResponse.error {
+            let message = error.message ?? "Unknown error"
+            throw FluidVaultError.transactionFailed("Privy RPC error: \(message)")
+        }
+        
+        guard let result = rpcResponse.result else {
+            throw FluidVaultError.transactionFailed("Privy RPC returned no transaction hash")
+        }
+        
+        return result
+    }
+    
+    private func makePrivySignature(
+        appSecret: String,
+        method: String,
+        path: String,
+        body: Data
+    ) -> (timestamp: String, signature: String)? {
+        guard !appSecret.isEmpty else { return nil }
+        let timestamp = String(Int(Date().timeIntervalSince1970))
+        let bodyString = String(data: body, encoding: .utf8) ?? ""
+        let message = "\(timestamp):\(method.uppercased()):\(path):\(bodyString)"
+        let key = SymmetricKey(data: Data(appSecret.utf8))
+        let signatureData = HMAC<SHA256>.authenticationCode(for: Data(message.utf8), using: key)
+        let encodedSignature = Data(signatureData).base64EncodedString()
+        return (timestamp, encodedSignature)
     }
     
     /// Wait for transaction confirmation with polling
