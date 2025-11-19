@@ -20,6 +20,9 @@ struct AppRootView: View {
             }
         }
         .animation(.easeInOut(duration: 0.35), value: route)
+        .onAppear {
+            privyCoordinator.prepare()
+        }
     }
 
     private func checkAuthAndProceed() {

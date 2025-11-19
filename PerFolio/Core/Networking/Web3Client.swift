@@ -230,14 +230,15 @@ actor Web3Client {
     
     private static func deriveAlchemyRPCURL(from rawValue: String) -> String? {
         let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else {
+        let unquoted = trimmed.trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
+        guard !unquoted.isEmpty else {
             return nil
         }
         
-        if trimmed.lowercased().hasPrefix("http") {
-            return trimmed
+        if unquoted.lowercased().hasPrefix("http") {
+            return unquoted
         }
         
-        return "https://eth-mainnet.g.alchemy.com/v2/\(trimmed)"
+        return "https://eth-mainnet.g.alchemy.com/v2/\(unquoted)"
     }
 }

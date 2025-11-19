@@ -89,6 +89,18 @@ final class PrivyAuthCoordinator: ObservableObject, PrivyAuthenticating {
     func verify(accessToken: String) async throws {
         try await tokenVerifier.verify(accessToken: accessToken)
     }
+    
+    func resolvedAuthState() async -> AuthState {
+        if case .notReady = authState, let client {
+            AppLogger.log("⌛️ Auth state not ready. Awaiting Privy client state…", category: "auth")
+            let state = await client.getAuthState()
+            await MainActor.run {
+                self.authState = state
+            }
+            return state
+        }
+        return authState
+    }
 
     private func observeAuthState(client: any Privy) {
         authStreamTask?.cancel()

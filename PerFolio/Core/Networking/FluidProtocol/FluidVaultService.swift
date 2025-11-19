@@ -256,8 +256,8 @@ final class FluidVaultService: ObservableObject {
         // Get Privy auth coordinator
         let authCoordinator = PrivyAuthCoordinator.shared
         
-        // Log current auth state for debugging
-        let authState = authCoordinator.authState
+        let authState = await authCoordinator.resolvedAuthState()
+        
         AppLogger.log("🔍 Current AuthState type: \(type(of: authState))", category: "fluid")
         AppLogger.log("🔍 AuthState description: \(authState)", category: "fluid")
         
@@ -295,51 +295,22 @@ final class FluidVaultService: ObservableObject {
         AppLogger.log("   Value: \(request.value)", category: "fluid")
         
         do {
-            // Try to send transaction using the embedded wallet
-            // The Privy SDK embedded wallet should have a method like:
-            // - wallet.sendTransaction()
-            // - wallet.send()
-            // - wallet.signAndSend()
-            
-            // Attempt 1: Check if wallet has sendTransaction method
-            // let txHash = try await wallet.sendTransaction(to: request.to, data: request.data, value: request.value)
-            
-            // Attempt 2: Build transaction parameters and send
-            let txParams = [
-                "to": request.to,
-                "from": request.from,
-                "data": request.data,
-                "value": request.value
-            ]
-            
             AppLogger.log("📤 Attempting to send transaction via Privy embedded wallet...", category: "fluid")
             
-            // The embedded wallet object should have a transaction sending method
-            // Based on Privy SDK patterns, it might be:
-            // let result = try await wallet.request(method: "eth_sendTransaction", params: [txParams])
-            
-            // For now, provide detailed error with actual wallet info
-            let walletId = wallet.id ?? "unknown"
-            throw FluidVaultError.notImplemented(
-                """
-                Privy embedded wallet ready but SDK method unknown.
-                
-                Wallet Info:
-                - Address: \(wallet.address)
-                - ID: \(walletId)
-                - Type: \(type(of: wallet))
-                
-                Next Steps:
-                1. Check Privy SDK documentation for: \(type(of: wallet))
-                2. Look for methods: sendTransaction(), send(), request()
-                3. Example: wallet.sendTransaction(to: "\(request.to)", data: "\(request.data)", value: "\(request.value)")
-                
-                The transaction data is ready and valid!
-                """
+            let chainId = await wallet.provider.chainId
+            let unsignedTx = PrivySDK.EthereumRpcRequest.UnsignedEthTransaction(
+                from: request.from,
+                to: request.to,
+                data: request.data,
+                value: makeHexQuantity(request.value),
+                chainId: .int(chainId)
             )
             
-        } catch let error as FluidVaultError {
-            throw error
+            let rpcRequest = try PrivySDK.EthereumRpcRequest.ethSendTransaction(transaction: unsignedTx)
+            let txHash = try await wallet.provider.request(rpcRequest)
+            
+            AppLogger.log("✅ Privy embedded wallet submitted transaction: \(txHash)", category: "fluid")
+            return txHash
         } catch {
             AppLogger.log("❌ Transaction signing failed: \(error)", category: "fluid")
             throw FluidVaultError.transactionFailed("Signing failed: \(error.localizedDescription)")
@@ -352,6 +323,22 @@ final class FluidVaultService: ObservableObject {
         let from: String
         let data: String
         let value: String
+    }
+    
+    private func makeHexQuantity(_ rawValue: String) -> PrivySDK.EthereumRpcRequest.UnsignedEthTransaction.Quantity? {
+        let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return nil
+        }
+        
+        let formatted: String
+        if trimmed.lowercased().hasPrefix("0x") {
+            formatted = trimmed
+        } else {
+            formatted = "0x\(trimmed)"
+        }
+        
+        return .hexadecimalNumber(formatted)
     }
     
     /// Wait for transaction confirmation with polling
@@ -467,4 +454,3 @@ enum FluidVaultError: LocalizedError {
         }
     }
 }
-

@@ -5,6 +5,17 @@ import PrivySDK
 
 @MainActor
 final class LandingViewModel: ObservableObject {
+    private enum WalletError: LocalizedError {
+        case creationFailed(String)
+        
+        var errorDescription: String? {
+            switch self {
+            case .creationFailed(let message):
+                return message
+            }
+        }
+    }
+    
     enum EmailLoginState {
         case emailInput
         case codeVerification
@@ -73,42 +84,24 @@ final class LandingViewModel: ObservableObject {
                 
                 // Extract embedded wallet from Privy user
                 // Get embedded Ethereum wallets from Privy SDK
-                let embeddedWallets = user.embeddedEthereumWallets
+                let embeddedWallet = try await ensureEmbeddedWallet(for: user)
                 
-                AppLogger.log("Found \(embeddedWallets.count) embedded Ethereum wallets", category: "auth")
+                // Extract wallet address and ID
+                let walletAddress = embeddedWallet.address
+                let walletId = embeddedWallet.id
                 
-                if let firstWallet = embeddedWallets.first {
-                    // Extract wallet address and ID
-                    let walletAddress = firstWallet.address
-                    let walletId = firstWallet.id
-                    
-                    AppLogger.log("✅ Embedded wallet extracted from SDK!", category: "auth")
-                    AppLogger.log("   Wallet Address: \(walletAddress)", category: "auth")
-                    AppLogger.log("   Wallet ID: \(walletId)", category: "auth")
-                    AppLogger.log("   User ID: \(user.id)", category: "auth")
-                    
-                    // Save wallet info to UserDefaults
-                    UserDefaults.standard.set(walletAddress, forKey: "userWalletAddress")
-                    UserDefaults.standard.set(walletId, forKey: "userWalletId")
-                    UserDefaults.standard.set(user.id, forKey: "privyUserId")
-                    UserDefaults.standard.set(accessToken, forKey: "privyAccessToken")
-                    
-                    AppLogger.log("🎉 Wallet info saved! Privy REST API now active!", category: "auth")
-                } else {
-                    // Fallback: Use known wallet address if SDK doesn't return wallets yet
-                    let knownWalletAddress = "0xB3Eb44b13f05eDcb2aC1802e2725b6F35f77D33c"
-                    
-                    AppLogger.log("⚠️ No embedded wallets returned by SDK", category: "auth")
-                    AppLogger.log("   Using known wallet address: \(knownWalletAddress)", category: "auth")
-                    AppLogger.log("   Privy REST API will use HTTP RPC fallback", category: "auth")
-                    
-                    // Save wallet info (without wallet ID - will use HTTP RPC)
-                    UserDefaults.standard.set(knownWalletAddress, forKey: "userWalletAddress")
-                    UserDefaults.standard.set(user.id, forKey: "privyUserId")
-                    UserDefaults.standard.set(accessToken, forKey: "privyAccessToken")
-                    
-                    AppLogger.log("Wallet info saved to storage", category: "auth")
-                }
+                AppLogger.log("✅ Embedded wallet extracted from SDK!", category: "auth")
+                AppLogger.log("   Wallet Address: \(walletAddress)", category: "auth")
+                AppLogger.log("   Wallet ID: \(walletId)", category: "auth")
+                AppLogger.log("   User ID: \(user.id)", category: "auth")
+                
+                // Save wallet info to UserDefaults
+                UserDefaults.standard.set(walletAddress, forKey: "userWalletAddress")
+                UserDefaults.standard.set(walletId, forKey: "userWalletId")
+                UserDefaults.standard.set(user.id, forKey: "privyUserId")
+                UserDefaults.standard.set(accessToken, forKey: "privyAccessToken")
+                
+                AppLogger.log("🎉 Wallet info saved! Privy REST API now active!", category: "auth")
                 
                 isLoading = false
                 alert = AlertConfig(
@@ -116,6 +109,12 @@ final class LandingViewModel: ObservableObject {
                     message: String(format: L10n.string(.landingAlertSuccessMessage), user.id)
                 )
                 onAuthenticated()
+            } catch WalletError.creationFailed(let message) {
+                isLoading = false
+                alert = AlertConfig(
+                    title: "Wallet Unavailable",
+                    message: message
+                )
             } catch {
                 isLoading = false
                 let errorMessage = error.localizedDescription
@@ -156,6 +155,22 @@ final class LandingViewModel: ObservableObject {
     func cancelEmailVerification() {
         emailLoginState = .emailInput
         email = ""
+    }
+    
+    private func ensureEmbeddedWallet(for user: any PrivyUser) async throws -> any EmbeddedEthereumWallet {
+        if let wallet = user.embeddedEthereumWallets.first {
+            return wallet
+        }
+        
+        AppLogger.log("⚠️ No embedded wallets returned. Attempting to create one via Privy SDK...", category: "auth")
+        do {
+            let newWallet = try await user.createEthereumWallet()
+            AppLogger.log("✅ Embedded wallet created via SDK! Address: \(newWallet.address)", category: "auth")
+            return newWallet
+        } catch {
+            AppLogger.log("❌ Failed to create embedded wallet: \(error)", category: "auth")
+            throw WalletError.creationFailed("We couldn’t create a PerFolio wallet for your account. Please try again or contact support.")
+        }
     }
 
     func loginTapped() {

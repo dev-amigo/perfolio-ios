@@ -1,4 +1,4 @@
-# Amigo Gold (iOS)
+# PerFolio (iOS)
 
 Liquid Glass–styled SwiftUI experience for a crypto-backed gold trading product with Privy authentication, modular architecture, and TestFlight automation.
 
