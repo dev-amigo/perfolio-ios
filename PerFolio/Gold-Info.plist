@@ -73,6 +73,8 @@
 	<string>$(PRIVY_APP_ID)</string>
 	<key>AGPrivyClientID</key>
 	<string>$(PRIVY_APP_CLIENT_ID)</string>
+	<key>AGPrivyAppSecret</key>
+	<string>$(PRIVY_APP_SECRET)</string>
 	<key>AGPrivyJWKSURL</key>
 	<string>$(PRIVY_JWKS_URL)</string>
 	<key>AGAlchemyAPIKey</key>
