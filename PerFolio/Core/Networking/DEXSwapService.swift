@@ -2,8 +2,8 @@ import Foundation
 import PrivySDK
 import Combine
 
-/// DEX swap service for USDT → PAXG conversion
-/// Uses 1inch API for best execution prices
+/// DEX swap service for USDC → PAXG conversion
+/// Uses 0x Aggregator for quotes and transaction data
 final class DEXSwapService: ObservableObject {
     
     // MARK: - Types
@@ -57,11 +57,11 @@ final class DEXSwapService: ObservableObject {
         let decimals: Int
         let name: String
         
-        static let usdt = Token(
-            address: ContractAddresses.usdt,
-            symbol: "USDT",
+        static let usdc = Token(
+            address: ContractAddresses.usdc,
+            symbol: "USDC",
             decimals: 6,
-            name: "Tether USD"
+            name: "USD Coin"
         )
         
         static let paxg = Token(
@@ -80,6 +80,26 @@ final class DEXSwapService: ObservableObject {
         let fromAddress: String
     }
     
+    private struct ZeroExQuoteResponse: Decodable {
+        struct Source: Decodable {
+            let name: String
+            let proportion: String
+        }
+        
+        let price: String
+        let guaranteedPrice: String?
+        let buyAmount: String
+        let sellAmount: String
+        let to: String
+        let data: String
+        let value: String
+        let gas: String?
+        let estimatedGas: String?
+        let gasPrice: String?
+        let allowanceTarget: String
+        let sources: [Source]?
+    }
+    
     enum SwapError: LocalizedError {
         case insufficientBalance
         case insufficientLiquidity
@@ -91,7 +111,7 @@ final class DEXSwapService: ObservableObject {
         var errorDescription: String? {
             switch self {
             case .insufficientBalance:
-                return "Insufficient USDT balance"
+                return "Insufficient USDC balance"
             case .insufficientLiquidity:
                 return "Insufficient liquidity for this swap"
             case .slippageTooHigh:
@@ -122,9 +142,10 @@ final class DEXSwapService: ObservableObject {
     @Published var currentQuote: SwapQuote?
     @Published var approvalState: ApprovalState = .notRequired
     
-    // 1inch API configuration
-    private let oneInchBaseURL = "https://api.1inch.dev/swap/v6.0/1" // Ethereum Mainnet
-    private let oneInchAPIKey: String
+    // 0x API configuration
+    private let zeroExQuoteURL = "https://api.0x.org/swap/v1/quote"
+    private var latestZeroExQuote: ZeroExQuoteResponse?
+    private let zeroExAPIKey: String
     
     // Slippage tolerance (0.5% default)
     let defaultSlippageTolerance = ServiceConstants.defaultSlippageTolerance
@@ -133,22 +154,19 @@ final class DEXSwapService: ObservableObject {
     
     init(
         web3Client: Web3Client = Web3Client(),
-        erc20Contract: ERC20Contract = ERC20Contract(),
-        oneInchAPIKey: String? = nil
+        erc20Contract: ERC20Contract = ERC20Contract()
     ) {
         self.web3Client = web3Client
         self.erc20Contract = erc20Contract
-        
-        // Get API key from Info.plist or use empty string for testing
-        self.oneInchAPIKey = oneInchAPIKey ?? (Bundle.main.object(forInfoDictionaryKey: "AG1InchAPIKey") as? String ?? "")
+        self.zeroExAPIKey = Bundle.main.object(forInfoDictionaryKey: "AGZeroXAPIKey") as? String ?? ""
         
         AppLogger.log("🔄 DEXSwapService initialized", category: "dex")
-        AppLogger.log("   1inch API URL: \(oneInchBaseURL)", category: "dex")
+        AppLogger.log("   0x Quote URL: \(zeroExQuoteURL)", category: "dex")
     }
     
     // MARK: - Public Methods
     
-    /// Get swap quote for USDT → PAXG
+    /// Get swap quote for USDC → PAXG
     func getQuote(params: SwapParams) async throws -> SwapQuote {
         AppLogger.log("📊 Getting swap quote: \(params.amount) \(params.fromToken.symbol) → \(params.toToken.symbol)", category: "dex")
         
@@ -159,9 +177,9 @@ final class DEXSwapService: ObservableObject {
         isLoading = true
         defer { isLoading = false }
         
-        // Check balance (currently only USDT is supported)
+        // Check balance
         let balances = try await erc20Contract.balancesOf(
-            tokens: [.usdt],
+            tokens: [.usdc],
             address: params.fromAddress
         )
         
@@ -169,29 +187,69 @@ final class DEXSwapService: ObservableObject {
             throw SwapError.insufficientBalance
         }
         
-        // In production, call 1inch API for real quote
-        // For now, use simplified calculation based on approximate prices
-        // USDT ≈ $1, PAXG ≈ $2000 (1 oz gold)
-        let paxgPriceInUSDT = ServiceConstants.goldPriceUSDT
-        let toAmount = params.amount / paxgPriceInUSDT
-        let priceImpact: Decimal = 0.1 // 0.1% for demo
+        let sellAmount = try toBaseUnits(params.amount, decimals: params.fromToken.decimals)
+        var components = URLComponents(string: zeroExQuoteURL)
+        components?.queryItems = [
+            URLQueryItem(name: "sellToken", value: params.fromToken.address),
+            URLQueryItem(name: "buyToken", value: params.toToken.address),
+            URLQueryItem(name: "sellAmount", value: sellAmount),
+            URLQueryItem(name: "takerAddress", value: params.fromAddress),
+            URLQueryItem(
+                name: "slippagePercentage",
+                value: NSDecimalNumber(decimal: params.slippageTolerance / 100).stringValue
+            )
+        ]
         
-        let quote = SwapQuote(
-            fromToken: params.fromToken,
-            toToken: params.toToken,
-            fromAmount: params.amount,
-            toAmount: toAmount,
-            estimatedGas: ServiceConstants.estimatedGasCost,
-            priceImpact: priceImpact,
-            route: ServiceConstants.defaultSwapRoute
-        )
+        guard let url = components?.url else {
+            throw SwapError.networkError("Invalid 0x quote URL")
+        }
         
-        currentQuote = quote
-        AppLogger.log("✅ Quote: \(quote.displayFromAmount) → \(quote.displayToAmount)", category: "dex")
-        AppLogger.log("   Price Impact: \(quote.displayPriceImpact)", category: "dex")
-        AppLogger.log("   Route: \(quote.route)", category: "dex")
+        var request = URLRequest(url: url)
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+        if !zeroExAPIKey.isEmpty {
+            request.addValue(zeroExAPIKey, forHTTPHeaderField: "0x-api-key")
+        }
         
-        return quote
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse,
+                  (200...299).contains(httpResponse.statusCode) else {
+                let message = String(data: data, encoding: .utf8) ?? "Unknown error"
+                throw SwapError.networkError("0x quote failed: \(message)")
+            }
+            
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase
+            let quoteResponse = try decoder.decode(ZeroExQuoteResponse.self, from: data)
+            latestZeroExQuote = quoteResponse
+            
+            let toAmount = fromBaseUnits(quoteResponse.buyAmount, decimals: params.toToken.decimals)
+            let estimatedGasValue = decimalFromString(quoteResponse.estimatedGas ?? quoteResponse.gas ?? "")
+            let estimatedGasText = estimatedGasValue != nil ? "~\(estimatedGasValue!) gas" : ServiceConstants.estimatedGasCost
+            let activeSources = quoteResponse.sources?.filter {
+                decimalFromString($0.proportion) ?? 0 > 0
+            }.map { $0.name } ?? []
+            let route = activeSources.isEmpty ? "0x Aggregator" : activeSources.joined(separator: " → ")
+            
+            let quote = SwapQuote(
+                fromToken: params.fromToken,
+                toToken: params.toToken,
+                fromAmount: params.amount,
+                toAmount: toAmount,
+                estimatedGas: estimatedGasText,
+                priceImpact: 0.1,
+                route: route
+            )
+            
+            currentQuote = quote
+            AppLogger.log("✅ Quote: \(quote.displayFromAmount) → \(quote.displayToAmount)", category: "dex")
+            AppLogger.log("   Route: \(quote.route)", category: "dex")
+            return quote
+        } catch let error as SwapError {
+            throw error
+        } catch {
+            throw SwapError.networkError(error.localizedDescription)
+        }
     }
     
     /// Check if token approval is needed for swap
@@ -254,11 +312,11 @@ final class DEXSwapService: ObservableObject {
         AppLogger.log("🔄 Executing swap: \(params.amount) \(params.fromToken.symbol) → \(params.toToken.symbol)", category: "dex")
         
         // Check approval first
-        let oneInchRouter = ContractAddresses.oneInchRouterV6
+        let zeroExProxy = latestZeroExQuote?.allowanceTarget ?? ContractAddresses.zeroExExchangeProxy
         let approvalState = try await checkApproval(
             tokenAddress: params.fromToken.address,
             ownerAddress: params.fromAddress,
-            spenderAddress: oneInchRouter,
+            spenderAddress: zeroExProxy,
             amount: params.amount
         )
         
@@ -270,7 +328,7 @@ final class DEXSwapService: ObservableObject {
         defer { isLoading = false }
         
         // In production:
-        // 1. Get swap transaction data from 1inch API
+        // 1. Use latest 0x quote to build transaction data
         // 2. Use Privy SDK to sign and send transaction with gas sponsorship
         // 3. Return transaction hash
         
@@ -287,6 +345,40 @@ final class DEXSwapService: ObservableObject {
     func reset() {
         currentQuote = nil
         approvalState = .notRequired
+        latestZeroExQuote = nil
+    }
+    
+    // MARK: - Helpers
+    
+    private func toBaseUnits(_ amount: Decimal, decimals: Int) throws -> String {
+        let nsDecimal = NSDecimalNumber(decimal: amount)
+        let scaled = nsDecimal.multiplying(byPowerOf10: Int16(decimals))
+        guard scaled != NSDecimalNumber.notANumber else {
+            throw SwapError.invalidAmount
+        }
+        return scaled.stringValue
+    }
+    
+    private func fromBaseUnits(_ value: String, decimals: Int) -> Decimal {
+        let decimal = NSDecimalNumber(string: value)
+        if decimal == NSDecimalNumber.notANumber {
+            return 0
+        }
+        let divisor = NSDecimalNumber(decimal: pow10(decimals))
+        return decimal.dividing(by: divisor).decimalValue
+    }
+    
+    private func decimalFromString(_ value: String) -> Decimal? {
+        guard let decimal = Decimal(string: value) else { return nil }
+        return decimal
+    }
+    
+    private func pow10(_ exponent: Int) -> Decimal {
+        var result = Decimal(1)
+        for _ in 0..<max(0, exponent) {
+            result *= 10
+        }
+        return result
     }
 }
 
@@ -299,4 +391,3 @@ private extension String {
         return String(repeating: element, count: padCount) + self
     }
 }
-

@@ -50,12 +50,12 @@ final class DepositBuyViewModel: ObservableObject {
     @Published var unifiedQuote: UnifiedDepositQuote?  // NEW: Unified Fiat → PAXG quote
     
     // Swap-related
-    @Published var usdtAmount: String = ""
+    @Published var usdcAmount: String = ""
     @Published var swapState: SwapState = .idle
     @Published var swapQuote: DEXSwapService.SwapQuote?
     @Published var slippageTolerance: Decimal = 0.5 // 0.5%
     @Published var goldPrice: Decimal = 0
-    @Published var usdtBalance: Decimal = 0
+    @Published var usdcBalance: Decimal = 0
     @Published var paxgBalance: Decimal = 0
     
     // Safari view
@@ -96,7 +96,7 @@ final class DepositBuyViewModel: ObservableObject {
         }
     }
     
-    // MARK: - OnMeta (INR → USDT) Methods
+    // MARK: - OnMeta (INR → USDC) Methods
     
     func getQuote() async {
         guard onMetaService.validateAmount(inrAmount) else {
@@ -110,7 +110,7 @@ final class DepositBuyViewModel: ObservableObject {
             let quote = try await onMetaService.getQuote(inrAmount: inrAmount)
             currentQuote = quote
             viewState = .quote
-            AppLogger.log("✅ Quote received: \(quote.displayUsdtAmount)", category: "depositbuy")
+            AppLogger.log("✅ Quote received: \(quote.displayUsdcAmount)", category: "depositbuy")
         } catch {
             viewState = .error(error.localizedDescription)
             showError(error.localizedDescription)
@@ -120,8 +120,8 @@ final class DepositBuyViewModel: ObservableObject {
     
     // MARK: - Unified Deposit Quote (Fiat → PAXG)
     
-    /// Get unified quote that chains Fiat → USDT → PAXG
-    /// Shows user final PAXG amount they'll receive in one step
+    /// Get unified quote that chains Fiat → USDC → PAXG
+        /// Shows user final PAXG amount they'll receive in one step
     func getUnifiedDepositQuote() async {
         // Validate amount using currency-aware validation
         guard let fiatAmount = selectedFiatCurrency.parse(inrAmount),
@@ -134,17 +134,17 @@ final class DepositBuyViewModel: ObservableObject {
         viewState = .processing
         
         do {
-            // Step 1: Get OnMeta quote (Fiat → USDT)
+            // Step 1: Get OnMeta quote (Fiat → USDC)
             AppLogger.log("🔗 Step 1/2: Getting OnMeta quote...", category: "depositbuy")
             let onMetaQuote = try await onMetaService.getQuote(inrAmount: inrAmount)
-            AppLogger.log("✅ OnMeta: \(selectedFiatCurrency.format(fiatAmount)) → \(onMetaQuote.displayUsdtAmount)", category: "depositbuy")
+            AppLogger.log("✅ OnMeta: \(selectedFiatCurrency.format(fiatAmount)) → \(onMetaQuote.displayUsdcAmount)", category: "depositbuy")
             
-            // Step 2: Get DEX quote (USDT → PAXG)
+            // Step 2: Get DEX quote (USDC → PAXG)
             AppLogger.log("🔗 Step 2/2: Getting DEX quote...", category: "depositbuy")
             let dexParams = DEXSwapService.SwapParams(
-                fromToken: .usdt,
+                fromToken: .usdc,
                 toToken: .paxg,
-                amount: onMetaQuote.usdtAmount,
+                amount: onMetaQuote.usdcAmount,
                 slippageTolerance: slippageTolerance,
                 fromAddress: walletAddress ?? ""
             )
@@ -206,10 +206,10 @@ final class DepositBuyViewModel: ObservableObject {
             try? await Task.sleep(nanoseconds: 2_000_000_000) // Wait 2s for transaction
             await loadBalances()
             
-            // Check if USDT balance increased
-            if usdtBalance > 0 {
+            // Check if USDC balance increased
+            if usdcBalance > 0 {
                 viewState = .success
-                AppLogger.log("✅ USDT balance updated: \(usdtBalance)", category: "depositbuy")
+                AppLogger.log("✅ USDC balance updated: \(usdcBalance)", category: "depositbuy")
             }
         }
     }
@@ -221,7 +221,7 @@ final class DepositBuyViewModel: ObservableObject {
         onMetaService.reset()
     }
     
-    // MARK: - DEX Swap (USDT → PAXG) Methods
+    // MARK: - DEX Swap (USDC → PAXG) Methods
     
     func getSwapQuote() async {
         guard let walletAddress = walletAddress else {
@@ -229,13 +229,13 @@ final class DepositBuyViewModel: ObservableObject {
             return
         }
         
-        guard let amount = Decimal(string: usdtAmount), amount > 0 else {
-            showError("Please enter a valid USDT amount")
+        guard let amount = Decimal(string: usdcAmount), amount > 0 else {
+            showError("Please enter a valid USDC amount")
             return
         }
         
-        guard amount <= usdtBalance else {
-            showError("Insufficient USDT balance")
+        guard amount <= usdcBalance else {
+            showError("Insufficient USDC balance")
             return
         }
         
@@ -243,7 +243,7 @@ final class DepositBuyViewModel: ObservableObject {
         
         do {
             let params = DEXSwapService.SwapParams(
-                fromToken: .usdt,
+                fromToken: .usdc,
                 toToken: .paxg,
                 amount: amount,
                 slippageTolerance: slippageTolerance,
@@ -255,9 +255,9 @@ final class DepositBuyViewModel: ObservableObject {
             
             // Check if approval is needed
             let approvalState = try await dexSwapService.checkApproval(
-                tokenAddress: DEXSwapService.Token.usdt.address,
+                tokenAddress: DEXSwapService.Token.usdc.address,
                 ownerAddress: walletAddress,
-                spenderAddress: ContractAddresses.oneInchRouterV6,
+                spenderAddress: ContractAddresses.zeroExExchangeProxy,
                 amount: amount
             )
             
@@ -273,13 +273,13 @@ final class DepositBuyViewModel: ObservableObject {
         }
     }
     
-    func approveUSDT() async {
+    func approveUSDC() async {
         guard let walletAddress = walletAddress else {
             showError("Wallet address not available")
             return
         }
         
-        guard let amount = Decimal(string: usdtAmount) else {
+        guard let amount = Decimal(string: usdcAmount) else {
             showError("Invalid amount")
             return
         }
@@ -288,11 +288,11 @@ final class DepositBuyViewModel: ObservableObject {
         
         do {
             try await dexSwapService.approveToken(
-                tokenAddress: DEXSwapService.Token.usdt.address,
-                spenderAddress: ContractAddresses.oneInchRouterV6,
+                tokenAddress: DEXSwapService.Token.usdc.address,
+                spenderAddress: ContractAddresses.zeroExExchangeProxy,
                 amount: amount
             )
-            AppLogger.log("✅ USDT approved for swap", category: "depositbuy")
+            AppLogger.log("✅ USDC approved for swap", category: "depositbuy")
             
             // Proceed to swap automatically
             await executeSwap()
@@ -309,7 +309,7 @@ final class DepositBuyViewModel: ObservableObject {
             return
         }
         
-        guard let amount = Decimal(string: usdtAmount) else {
+        guard let amount = Decimal(string: usdcAmount) else {
             showError("Invalid amount")
             return
         }
@@ -318,7 +318,7 @@ final class DepositBuyViewModel: ObservableObject {
         
         do {
             let params = DEXSwapService.SwapParams(
-                fromToken: .usdt,
+                fromToken: .usdc,
                 toToken: .paxg,
                 amount: amount,
                 slippageTolerance: slippageTolerance,
@@ -341,7 +341,7 @@ final class DepositBuyViewModel: ObservableObject {
     }
     
     func resetSwapFlow() {
-        usdtAmount = ""
+        usdcAmount = ""
         swapQuote = nil
         swapState = .idle
         dexSwapService.reset()
@@ -354,14 +354,14 @@ final class DepositBuyViewModel: ObservableObject {
         
         do {
             let balances = try await erc20Contract.balancesOf(
-                tokens: [.usdt, .paxg],
+                tokens: [.usdc, .paxg],
                 address: walletAddress
             )
             
-            usdtBalance = balances.first(where: { $0.symbol == "USDT" })?.decimalBalance ?? 0
+            usdcBalance = balances.first(where: { $0.symbol == "USDC" })?.decimalBalance ?? 0
             paxgBalance = balances.first(where: { $0.symbol == "PAXG" })?.decimalBalance ?? 0
             
-            AppLogger.log("💰 Balances: USDT=\(usdtBalance), PAXG=\(paxgBalance)", category: "depositbuy")
+            AppLogger.log("💰 Balances: USDC=\(usdcBalance), PAXG=\(paxgBalance)", category: "depositbuy")
         } catch {
             AppLogger.log("❌ Failed to load balances: \(error.localizedDescription)", category: "depositbuy")
         }
@@ -370,7 +370,7 @@ final class DepositBuyViewModel: ObservableObject {
     func fetchGoldPrice() async {
         // In production, fetch from CoinGecko or price oracle
         // For now, use a static price
-        goldPrice = ServiceConstants.goldPriceUSDT
+        goldPrice = ServiceConstants.goldPriceUSD
         AppLogger.log("💰 Gold price: $\(goldPrice)", category: "depositbuy")
     }
     
@@ -388,12 +388,12 @@ final class DepositBuyViewModel: ObservableObject {
     
     // MARK: - Computed Properties
     
-    var formattedUSDTBalance: String {
+    var formattedUSDCBalance: String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         formatter.minimumFractionDigits = 2
         formatter.maximumFractionDigits = 6
-        return formatter.string(from: usdtBalance as NSNumber) ?? "0.00"
+        return formatter.string(from: usdcBalance as NSNumber) ?? "0.00"
     }
     
     var formattedPAXGBalance: String {
@@ -409,7 +409,7 @@ final class DepositBuyViewModel: ObservableObject {
     }
     
     var estimatedPAXGAmount: String {
-        guard let amount = Decimal(string: usdtAmount), goldPrice > 0 else {
+        guard let amount = Decimal(string: usdcAmount), goldPrice > 0 else {
             return "0.0000"
         }
         let paxgAmount = amount / goldPrice
@@ -428,4 +428,3 @@ enum PaymentMethod: String, CaseIterable {
     case bankTransfer = "Bank Transfer"
     case card = "Card"
 }
-

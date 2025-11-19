@@ -16,6 +16,9 @@ enum ContractAddresses {
     /// 1inch v6 Aggregation Router on Ethereum Mainnet
     static let oneInchRouterV6 = "0x111111125421ca6dc452d289314280a0f8842a65"
     
+    /// 0x Exchange Proxy
+    static let zeroExExchangeProxy = "0xDEF1C0DED9bec7F1a1670819833240f027b25EfF"
+    
     /// Uniswap V3 Router on Ethereum Mainnet
     static let uniswapV3Router = "0xE592427A0AEce92De3Edee1F18E0157C05861564"
     
@@ -51,7 +54,7 @@ enum ServiceConstants {
     /// OnMeta estimated time for transaction
     static let onMetaEstimatedTime = "5-15 minutes"
     
-    /// OnMeta default exchange rate (1 USDT = ₹92.5)
+    /// OnMeta default exchange rate (1 USDC = ₹92.5)
     /// Note: In production, fetch from OnMeta quote API
     static let onMetaDefaultExchangeRate: Decimal = 92.5
     
@@ -60,9 +63,9 @@ enum ServiceConstants {
     /// Default slippage tolerance (0.5%)
     static let defaultSlippageTolerance: Decimal = 0.5
     
-    /// Gold price in USDT (approx $2000/oz)
+    /// Gold price in USD (approx $2000/oz)
     /// Note: In production, fetch from CoinGecko or oracle
-    static let goldPriceUSDT: Decimal = 2000
+    static let goldPriceUSD: Decimal = 2000
     
     /// High price impact threshold (3%)
     static let highPriceImpactThreshold: Decimal = 3.0
@@ -71,7 +74,7 @@ enum ServiceConstants {
     static let estimatedGasCost = "~$5-10"
     
     /// Default swap route description
-    static let defaultSwapRoute = "USDT → WETH → PAXG (Uniswap V3)"
+    static let defaultSwapRoute = "USDC → 0x Aggregator → PAXG"
     
     // MARK: - Timeouts
     
@@ -90,4 +93,3 @@ enum ServiceConstants {
     /// Balance refresh delay (3 seconds)
     static let balanceRefreshDelay: UInt64 = 3_000_000_000
 }
-

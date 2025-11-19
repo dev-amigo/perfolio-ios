@@ -56,9 +56,9 @@ final class CurrencyFormatterTests: XCTestCase {
     
     // MARK: - Token Formatting Tests
     
-    func testFormatToken_USDT() {
-        let result = CurrencyFormatter.formatToken(1000.50, symbol: "USDT")
-        XCTAssertEqual(result, "1,000.50 USDT")
+    func testFormatToken_USDC() {
+        let result = CurrencyFormatter.formatToken(1000.50, symbol: "USDC")
+        XCTAssertEqual(result, "1,000.50 USDC")
     }
     
     func testFormatToken_PAXG() {
@@ -132,4 +132,3 @@ final class CurrencyFormatterTests: XCTestCase {
         XCTAssertFalse(CurrencyFormatter.validateAmount(-100, min: 500, max: 100_000))
     }
 }
-

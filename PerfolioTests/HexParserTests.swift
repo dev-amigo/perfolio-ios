@@ -21,7 +21,7 @@ final class HexParserTests: XCTestCase {
     }
     
     func testParseToDecimal_VeryLargeNumber() throws {
-        // 1 million USDT (with 6 decimals): 1000000 * 10^6 = 1000000000000
+        // 1 million USDC (with 6 decimals): 1000000 * 10^6 = 1000000000000
         let result = try HexParser.parseToDecimal("0xE8D4A51000") // 1,000,000,000,000
         XCTAssertEqual(result, 1_000_000_000_000)
     }
@@ -100,4 +100,3 @@ final class HexParserTests: XCTestCase {
         XCTAssertGreaterThan(result, 0)
     }
 }
-

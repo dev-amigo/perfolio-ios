@@ -2,14 +2,12 @@ import SwiftUI
 
 struct WithdrawView: View {
     @EnvironmentObject private var themeManager: ThemeManager
-    @State private var usdcAmount: String = ""
     
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
                 headerSection
-                withdrawCard
-                withdrawalInfoCard
+                WithdrawSectionContent()
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 24)
@@ -32,7 +30,19 @@ struct WithdrawView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
     
-    // MARK: - Withdraw Card
+    // All other UI lives in WithdrawSectionContent
+}
+
+struct WithdrawSectionContent: View {
+    @EnvironmentObject private var themeManager: ThemeManager
+    @State private var usdcAmount: String = ""
+    
+    var body: some View {
+        VStack(spacing: 24) {
+            withdrawCard
+            withdrawalInfoCard
+        }
+    }
     
     private var withdrawCard: some View {
         PerFolioCard {
@@ -46,10 +56,8 @@ struct WithdrawView: View {
                 Divider()
                     .background(themeManager.perfolioTheme.border)
                 
-                // Current balance
                 availableBalanceSection
                 
-                // Amount input with quick buttons
                 PerFolioInputField(
                     label: "Withdraw Amount",
                     text: $usdcAmount,
@@ -57,7 +65,6 @@ struct WithdrawView: View {
                     presetValues: ["50%", "Max"]
                 )
                 
-                // Fiat currency selector (locked to INR)
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Receive Currency")
                         .font(.system(size: 14, weight: .medium, design: .rounded))
@@ -79,13 +86,9 @@ struct WithdrawView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 }
                 
-                // Estimate breakdown
                 estimateBreakdown
                 
-                // Start off-ramp button
-                PerFolioButton("START OFF-RAMP (COMING SOON)", style: .disabled, isDisabled: true) {
-                    // Will be implemented in Phase 5
-                }
+                PerFolioButton("START OFF-RAMP (COMING SOON)", style: .disabled, isDisabled: true) { }
             }
         }
     }
@@ -129,8 +132,6 @@ struct WithdrawView: View {
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
     
-    // MARK: - Withdrawal Info Card
-    
     private var withdrawalInfoCard: some View {
         PerFolioCard {
             VStack(alignment: .leading, spacing: 16) {
@@ -164,7 +165,6 @@ struct WithdrawView: View {
                     )
                 }
                 
-                // Info banner
                 PerFolioInfoBanner(
                     "You'll be redirected to our payment partner to complete the withdrawal"
                 )

@@ -39,7 +39,7 @@ actor ERC20Contract {
             switch self {
             case .paxg: return 18
             case .usdt: return 6
-            case .usdc: return 6  // USDC also uses 6 decimals
+            case .usdc: return 6
             }
         }
     }
@@ -136,7 +136,7 @@ actor ERC20Contract {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         formatter.minimumFractionDigits = 0
-        formatter.maximumFractionDigits = decimals <= 6 ? 2 : 4  // USDT: 2 decimals, PAXG: 4 decimals
+        formatter.maximumFractionDigits = decimals <= 6 ? 2 : 4  // Stablecoins: 2 decimals, PAXG: 4 decimals
         formatter.groupingSeparator = ","
         
         return formatter.string(from: balance as NSDecimalNumber) ?? "0"
@@ -154,4 +154,3 @@ extension String {
         return String(repeating: character, count: padLength) + self
     }
 }
-
