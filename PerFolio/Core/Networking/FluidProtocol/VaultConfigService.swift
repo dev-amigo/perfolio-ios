@@ -59,7 +59,7 @@ final class VaultConfigService: ObservableObject {
         do {
             // Encode getVaultEntireData(address vault) call
             // Function selector: First 4 bytes of keccak256("getVaultEntireData(address)")
-            let functionSelector = "0x9f7b45e2"
+            let functionSelector = "0x09c062e2"
             
             // Pad vault address to 32 bytes
             let cleanAddress = vaultAddress.replacingOccurrences(of: "0x", with: "")

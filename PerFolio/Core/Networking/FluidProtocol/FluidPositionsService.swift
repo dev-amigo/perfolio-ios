@@ -48,14 +48,14 @@ final class FluidPositionsService {
     // MARK: - Resolver Call
     
     private func fetchRawPositions(owner: String) async throws -> [ResolverPosition] {
-        let selector = "919ddbf0"  // keccak256("positionsByUser(address)")
+        let selector = "347ca8bb"  // keccak256("positionsByUser(address)")
         let cleanOwner = owner.replacingOccurrences(of: "0x", with: "").paddingLeft(to: 64, with: "0")
         let callData = "0x" + selector + cleanOwner
-        AppLogger.log("📡 positionsByUser via resolver \(ContractAddresses.fluidPositionsResolver)", category: "borrow")
+        AppLogger.log("📡 positionsByUser via resolver \(ContractAddresses.fluidVaultResolver)", category: "borrow")
         
         do {
             let result = try await web3Client.ethCall(
-                to: ContractAddresses.fluidPositionsResolver,
+                to: ContractAddresses.fluidVaultResolver,
                 data: callData
             )
             
