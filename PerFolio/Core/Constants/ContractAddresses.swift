@@ -30,8 +30,11 @@ enum ContractAddresses {
     /// Fluid PAXG/USDC Vault - Main vault for collateralized lending
     static let fluidPaxgUsdcVault = "0x238207734AdBD22037af0437Ef65F13bABbd1917"
     
-    /// Fluid Vault Resolver - For fetching vault config and user positions
+    /// Fluid Vault Resolver - For fetching vault config (Instadapp official)
     static let fluidVaultResolver = "0x394Ce45678e0019c0045194a561E2bEd0FCc6Cf0"
+    
+    /// Fluid Positions Resolver - Read-only helper for fetching user positions
+    static let fluidPositionsResolver = "0x3E3dae4F30347782089d398D462546eb5276801C"
     
     /// Fluid Lending Resolver - For fetching borrow APY rates
     static let fluidLendingResolver = "0xC215485C572365AE87f908ad35233EC2572A3BEC"

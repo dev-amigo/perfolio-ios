@@ -54,7 +54,7 @@ final class VaultConfigService: ObservableObject {
         isLoading = true
         defer { isLoading = false }
         
-        AppLogger.log("🔄 Fetching vault config for \(vaultAddress)...", category: "vault")
+        AppLogger.log("🔄 Fetching vault config for \(vaultAddress) via resolver \(ContractAddresses.fluidVaultResolver)...", category: "vault")
         
         do {
             // Encode getVaultEntireData(address vault) call

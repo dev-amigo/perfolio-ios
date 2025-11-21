@@ -103,8 +103,7 @@ final class FluidVaultService: ObservableObject {
             AppLogger.log("📝 Approving PAXG spending...", category: "fluid")
             let approveTxHash = try await approvePAXG(
                 spender: request.vaultAddress,
-                amount: request.collateralAmount,
-                from: request.userAddress
+                amount: request.collateralAmount
             )
             AppLogger.log("✅ PAXG approved: \(approveTxHash)", category: "fluid")
             
@@ -132,52 +131,182 @@ final class FluidVaultService: ObservableObject {
         return nftId
     }
     
+    // MARK: - Active Loan Operations
+    
+    func addCollateral(position: BorrowPosition, amount: Decimal) async throws {
+        guard amount > 0 else {
+            throw FluidVaultError.invalidRequest
+        }
+        
+        let owner = position.owner
+        try await ensureBalance(token: .paxg, owner: owner, requiredAmount: amount)
+        
+        if try await checkPAXGAllowance(owner: owner, spender: position.vaultAddress, amount: amount) {
+            let approvalHash = try await approvePAXG(
+                spender: position.vaultAddress,
+                amount: amount
+            )
+            try await waitForTransaction(approvalHash)
+        }
+        
+        let txHash = try await operateExistingPosition(
+            nftId: position.nftId,
+            collateralDelta: amount,
+            debtDelta: 0,
+            ownerAddress: owner,
+            vaultAddress: position.vaultAddress
+        )
+        try await waitForTransaction(txHash)
+    }
+    
+    func repay(position: BorrowPosition, amount: Decimal) async throws {
+        guard amount > 0 else {
+            throw FluidVaultError.invalidRequest
+        }
+        let repayAmount = min(amount, position.borrowAmount)
+        guard repayAmount > 0 else {
+            throw FluidVaultError.invalidRequest
+        }
+        
+        let owner = position.owner
+        try await ensureBalance(token: .usdc, owner: owner, requiredAmount: repayAmount)
+        
+        if try await checkUSDCAllowance(owner: owner, spender: position.vaultAddress, amount: repayAmount) {
+            let approvalHash = try await approveUSDC(
+                spender: position.vaultAddress,
+                amount: repayAmount
+            )
+            try await waitForTransaction(approvalHash)
+        }
+        
+        let txHash = try await operateExistingPosition(
+            nftId: position.nftId,
+            collateralDelta: 0,
+            debtDelta: -repayAmount,
+            ownerAddress: owner,
+            vaultAddress: position.vaultAddress
+        )
+        try await waitForTransaction(txHash)
+    }
+    
+    func withdraw(position: BorrowPosition, amount: Decimal) async throws {
+        guard amount > 0 else {
+            throw FluidVaultError.invalidRequest
+        }
+        guard amount <= position.collateralAmount else {
+            throw FluidVaultError.transactionFailed("Amount exceeds locked collateral")
+        }
+        
+        let txHash = try await operateExistingPosition(
+            nftId: position.nftId,
+            collateralDelta: -amount,
+            debtDelta: 0,
+            ownerAddress: position.owner,
+            vaultAddress: position.vaultAddress
+        )
+        try await waitForTransaction(txHash)
+    }
+    
+    func close(position: BorrowPosition) async throws {
+        if position.borrowAmount > 0 {
+            try await repay(position: position, amount: position.borrowAmount)
+        }
+        if position.collateralAmount > 0 {
+            try await withdraw(position: position, amount: position.collateralAmount)
+        }
+    }
+    
     // MARK: - Private Helpers
     
     /// Check if PAXG approval is needed
     private func checkPAXGAllowance(owner: String, spender: String, amount: Decimal) async throws -> Bool {
-        // Encode allowance(address owner, address spender) call
+        return try await checkERC20Allowance(
+            tokenAddress: ContractAddresses.paxg,
+            decimals: 18,
+            owner: owner,
+            spender: spender,
+            amount: amount
+        )
+    }
+    
+    private func checkUSDCAllowance(owner: String, spender: String, amount: Decimal) async throws -> Bool {
+        return try await checkERC20Allowance(
+            tokenAddress: ContractAddresses.usdc,
+            decimals: 6,
+            owner: owner,
+            spender: spender,
+            amount: amount
+        )
+    }
+    
+    private func checkERC20Allowance(
+        tokenAddress: String,
+        decimals: Int,
+        owner: String,
+        spender: String,
+        amount: Decimal
+    ) async throws -> Bool {
         let functionSelector = "0xdd62ed3e"
-        
         let cleanOwner = owner.replacingOccurrences(of: "0x", with: "").paddingLeft(to: 64, with: "0")
         let cleanSpender = spender.replacingOccurrences(of: "0x", with: "").paddingLeft(to: 64, with: "0")
-        
         let callData = functionSelector + cleanOwner + cleanSpender
         
         let result = try await web3Client.ethCall(
-            to: ContractAddresses.paxg,
+            to: tokenAddress,
             data: callData
         )
         
-        // Parse allowance (hex to Decimal)
         let allowance = parseUint256(result)
-        let amountInWei = amount * pow(Decimal(10), 18)
-        
-        return allowance < amountInWei
+        let amountRequired = amount * pow(Decimal(10), decimals)
+        return allowance < amountRequired
     }
     
     /// Approve PAXG spending
-    private func approvePAXG(spender: String, amount: Decimal, from: String) async throws -> String {
-        // Build approve transaction
-        // approve(address spender, uint256 amount)
+    private func approvePAXG(spender: String, amount: Decimal) async throws -> String {
+        return try await approveToken(
+            tokenAddress: ContractAddresses.paxg,
+            decimals: 18,
+            spender: spender,
+            amount: amount
+        )
+    }
+    
+    private func approveUSDC(spender: String, amount: Decimal) async throws -> String {
+        return try await approveToken(
+            tokenAddress: ContractAddresses.usdc,
+            decimals: 6,
+            spender: spender,
+            amount: amount
+        )
+    }
+    
+    private func approveToken(
+        tokenAddress: String,
+        decimals: Int,
+        spender: String,
+        amount: Decimal
+    ) async throws -> String {
         let functionSelector = "0x095ea7b3"
-        
         let cleanSpender = spender.replacingOccurrences(of: "0x", with: "").paddingLeft(to: 64, with: "0")
-        
-        // Amount in Wei (18 decimals)
-        let amountInWei = amount * pow(Decimal(10), 18)
-        let amountHex = decimalToHex(amountInWei).paddingLeft(to: 64, with: "0")
-        
+        let amountHex = try encodeUnsignedQuantity(amount, decimals: decimals)
         let txData = "0x" + functionSelector.replacingOccurrences(of: "0x", with: "") + cleanSpender + amountHex
-        
         AppLogger.log("📝 Approve transaction data: \(txData.prefix(100))...", category: "fluid")
-        
-        // Sign and send with Privy
         return try await sendTransaction(
-            to: ContractAddresses.paxg,
+            to: tokenAddress,
             data: txData,
             value: "0x0"
         )
+    }
+    
+    private func ensureBalance(
+        token: ERC20Contract.Token,
+        owner: String,
+        requiredAmount: Decimal
+    ) async throws {
+        let balance = try await erc20Contract.balanceOf(token: token, address: owner)
+        if balance.decimalBalance < requiredAmount {
+            throw FluidVaultError.transactionFailed("Insufficient \(token.symbol) balance")
+        }
     }
     
     /// Execute operate call (deposit + borrow)
@@ -191,12 +320,8 @@ final class FluidVaultService: ObservableObject {
         let nftId = "0".paddingLeft(to: 64, with: "0")
         
         // newCol = positive collateral amount in Wei
-        let collateralWei = request.collateralAmount * pow(Decimal(10), 18)
-        let collateralHex = decimalToHex(collateralWei).paddingLeft(to: 64, with: "0")
-        
-        // newDebt = positive borrow amount in smallest units
-        let borrowSmallest = request.borrowAmount * pow(Decimal(10), 6)
-        let borrowHex = decimalToHex(borrowSmallest).paddingLeft(to: 64, with: "0")
+        let collateralHex = try encodeUnsignedQuantity(request.collateralAmount, decimals: 18)
+        let borrowHex = try encodeUnsignedQuantity(request.borrowAmount, decimals: 6)
         
         // to = user address
         let cleanAddress = request.userAddress.replacingOccurrences(of: "0x", with: "").paddingLeft(to: 64, with: "0")
@@ -208,6 +333,28 @@ final class FluidVaultService: ObservableObject {
         // Sign and send with Privy
         return try await sendTransaction(
             to: request.vaultAddress,
+            data: txData,
+            value: "0x0"
+        )
+    }
+    
+    private func operateExistingPosition(
+        nftId: String,
+        collateralDelta: Decimal,
+        debtDelta: Decimal,
+        ownerAddress: String,
+        vaultAddress: String
+    ) async throws -> String {
+        let functionSelector = "0x690d8320"
+        let nftHex = try encodeNFTId(nftId)
+        let collateralHex = try encodeSignedQuantity(collateralDelta, decimals: 18)
+        let debtHex = try encodeSignedQuantity(debtDelta, decimals: 6)
+        let cleanOwner = ownerAddress.replacingOccurrences(of: "0x", with: "").paddingLeft(to: 64, with: "0")
+        
+        let txData = "0x" + functionSelector.replacingOccurrences(of: "0x", with: "") + nftHex + collateralHex + debtHex + cleanOwner
+        AppLogger.log("⚙️ Operate tx for NFT #\(nftId): \(txData.prefix(100))...", category: "fluid")
+        return try await sendTransaction(
+            to: vaultAddress,
             data: txData,
             value: "0x0"
         )
@@ -558,6 +705,129 @@ final class FluidVaultService: ObservableObject {
     private func decimalToHex(_ value: Decimal) -> String {
         let intValue = NSDecimalNumber(decimal: value).intValue
         return String(intValue, radix: 16)
+    }
+    
+    private func encodeUnsignedQuantity(_ amount: Decimal, decimals: Int) throws -> String {
+        let integerString = try makeIntegerString(amount, decimals: decimals)
+        let hex = decimalStringToHex(integerString)
+        return hex.paddingLeft(to: 64, with: "0")
+    }
+    
+    private func encodeSignedQuantity(_ amount: Decimal, decimals: Int) throws -> String {
+        let integerString = try makeIntegerString(amount, decimals: decimals)
+        let isNegative = integerString.hasPrefix("-")
+        let unsigned = isNegative ? String(integerString.dropFirst()) : integerString
+        let hex = decimalStringToHex(unsigned)
+        let padded = hex.paddingLeft(to: 64, with: "0")
+        return isNegative ? twosComplement(padded) : padded
+    }
+    
+    private func makeIntegerString(_ amount: Decimal, decimals: Int) throws -> String {
+        let scaled = amount * pow(Decimal(10), decimals)
+        let handler = NSDecimalNumberHandler(
+            roundingMode: .plain,
+            scale: 0,
+            raiseOnExactness: false,
+            raiseOnOverflow: false,
+            raiseOnUnderflow: false,
+            raiseOnDivideByZero: false
+        )
+        let number = NSDecimalNumber(decimal: scaled).rounding(accordingToBehavior: handler)
+        if number == NSDecimalNumber.notANumber {
+            throw FluidVaultError.transactionFailed("Invalid numeric conversion")
+        }
+        return number.stringValue.replacingOccurrences(of: ".", with: "")
+    }
+    
+    private func decimalStringToHex(_ decimalString: String) -> String {
+        var current = decimalString.trimmingCharacters(in: .whitespacesAndNewlines)
+        if current.isEmpty || current == "0" {
+            return "0"
+        }
+        
+        var result = ""
+        
+        while current != "0" {
+            let division = divideDecimalStringBy16(current)
+            current = division.quotient
+            let hexChar = hexDigit(for: division.remainder)
+            result.insert(hexChar, at: result.startIndex)
+        }
+        
+        return result.isEmpty ? "0" : result
+    }
+    
+    private func divideDecimalStringBy16(_ number: String) -> (quotient: String, remainder: Int) {
+        var remainder = 0
+        var quotientChars: [Character] = []
+        var hasStarted = false
+        
+        for char in number {
+            guard let digit = char.wholeNumberValue else { continue }
+            let value = remainder * 10 + digit
+            let q = value / 16
+            remainder = value % 16
+            if hasStarted || q > 0 {
+                quotientChars.append(Character(String(q)))
+                hasStarted = true
+            }
+        }
+        
+        let quotient = quotientChars.isEmpty ? "0" : String(quotientChars)
+        return (quotient, remainder)
+    }
+    
+    private func twosComplement(_ paddedHex: String) -> String {
+        var inverted: [Character] = []
+        for char in paddedHex {
+            let value = 15 - (hexValue(of: char) ?? 0)
+            inverted.append(hexDigit(for: value))
+        }
+        
+        var carry = 1
+        for i in stride(from: inverted.count - 1, through: 0, by: -1) {
+            let sum = (hexValue(of: inverted[i]) ?? 0) + carry
+            inverted[i] = hexDigit(for: sum & 0xF)
+            carry = sum >> 4
+            if carry == 0 { break }
+        }
+        return String(inverted)
+    }
+    
+    private func encodeNFTId(_ nftId: String) throws -> String {
+        guard let value = UInt64(nftId) else {
+            throw FluidVaultError.invalidRequest
+        }
+        let hex = String(value, radix: 16)
+        return hex.paddingLeft(to: 64, with: "0")
+    }
+    
+    private func hexDigit(for value: Int) -> Character {
+        let digits = Array("0123456789abcdef")
+        let index = max(0, min(15, value))
+        return digits[index]
+    }
+    
+    private func hexValue(of character: Character) -> Int? {
+        switch character.lowercased() {
+        case "0": return 0
+        case "1": return 1
+        case "2": return 2
+        case "3": return 3
+        case "4": return 4
+        case "5": return 5
+        case "6": return 6
+        case "7": return 7
+        case "8": return 8
+        case "9": return 9
+        case "a": return 10
+        case "b": return 11
+        case "c": return 12
+        case "d": return 13
+        case "e": return 14
+        case "f": return 15
+        default: return nil
+        }
     }
 }
 

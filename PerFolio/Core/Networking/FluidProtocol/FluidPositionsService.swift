@@ -51,10 +51,11 @@ final class FluidPositionsService {
         let selector = "919ddbf0"  // keccak256("positionsByUser(address)")
         let cleanOwner = owner.replacingOccurrences(of: "0x", with: "").paddingLeft(to: 64, with: "0")
         let callData = "0x" + selector + cleanOwner
+        AppLogger.log("📡 positionsByUser via resolver \(ContractAddresses.fluidPositionsResolver)", category: "borrow")
         
         do {
             let result = try await web3Client.ethCall(
-                to: ContractAddresses.fluidVaultResolver,
+                to: ContractAddresses.fluidPositionsResolver,
                 data: callData
             )
             

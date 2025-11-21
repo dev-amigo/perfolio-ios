@@ -4,6 +4,7 @@ struct ActiveLoansView: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.openURL) private var openURL
     @StateObject private var viewModel = ActiveLoansViewModel()
+    @StateObject private var actionHandler = LoanActionHandler()
     @State private var expandedPositions: Set<String> = []
     @State private var pendingAction: LoanAction?
     
@@ -31,12 +32,10 @@ struct ActiveLoansView: View {
         .onAppear {
             viewModel.onAppear()
         }
-        .alert(item: $pendingAction) { action in
-            Alert(
-                title: Text(action.title),
-                message: Text(action.message),
-                dismissButton: .default(Text("OK"))
-            )
+        .sheet(item: $pendingAction) { action in
+            LoanActionSheet(action: action, handler: actionHandler) {
+                viewModel.reload()
+            }
         }
     }
     
@@ -380,51 +379,6 @@ struct ActiveLoansView: View {
         formatter.maximumFractionDigits = 2
         let percent = (value as NSDecimalNumber).doubleValue / 100
         return formatter.string(from: NSNumber(value: percent)) ?? "0%"
-    }
-}
-
-// MARK: - Loan Actions
-
-private enum LoanAction: Identifiable {
-    case payBack(BorrowPosition)
-    case addCollateral(BorrowPosition)
-    case withdrawCollateral(BorrowPosition)
-    case close(BorrowPosition)
-    
-    var id: String {
-        switch self {
-        case .payBack(let position),
-             .addCollateral(let position),
-             .withdrawCollateral(let position),
-             .close(let position):
-            return position.id + title
-        }
-    }
-    
-    var title: String {
-        switch self {
-        case .payBack:
-            return "Action Coming Soon"
-        case .addCollateral:
-            return "Add More Gold"
-        case .withdrawCollateral:
-            return "Take Gold Back"
-        case .close:
-            return "Close Loan"
-        }
-    }
-    
-    var message: String {
-        switch self {
-        case .payBack:
-            return "Loan repayment is in progress. This button will connect you to the payback workflow once it ships."
-        case .addCollateral:
-            return "Adding collateral will be available shortly. Stay tuned!"
-        case .withdrawCollateral:
-            return "Withdrawing collateral is coming soon."
-        case .close:
-            return "Closing loans from the app is on our roadmap."
-        }
     }
 }
 
