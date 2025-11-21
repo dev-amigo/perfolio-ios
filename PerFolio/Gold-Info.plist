@@ -127,5 +127,7 @@
 	<string>$(ONEINCH_API_KEY)</string>
 	<key>AGTransakAPIKey</key>
 	<string>$(TRANSAK_API_KEY)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>
