@@ -1,4 +1,5 @@
 import UIKit
+import AudioToolbox
 
 /// Centralized haptic feedback manager with user preference support
 final class HapticManager {

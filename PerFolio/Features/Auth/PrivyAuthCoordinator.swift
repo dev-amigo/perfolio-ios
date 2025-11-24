@@ -126,4 +126,20 @@ final class PrivyAuthCoordinator: ObservableObject, PrivyAuthenticating {
             return .google
         }
     }
+    
+    // MARK: - User Info
+    
+    func getUserEmail() -> String? {
+        guard case .authenticated(let user) = authState else { return nil }
+        return user.email?.address
+    }
+    
+    // MARK: - Logout
+    
+    func logout() async {
+        guard let client = client else { return }
+        AppLogger.log("Logging out user...", category: "auth")
+        await client.logout()
+        AppLogger.log("User logged out successfully", category: "auth")
+    }
 }
