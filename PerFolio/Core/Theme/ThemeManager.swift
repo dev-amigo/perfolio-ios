@@ -20,9 +20,9 @@ final class ThemeManager: ObservableObject {
         self.colorScheme = colorScheme
         self.palette = colorScheme == .dark ? .dark : .light
         
-        // Load saved theme variant or default to dark
-        let savedVariantString = UserDefaults.standard.string(forKey: themeVariantKey) ?? ThemeVariant.dark.rawValue
-        let loadedVariant = ThemeVariant(rawValue: savedVariantString) ?? .dark
+        // Load saved theme variant or default to Extra Dark
+        let savedVariantString = UserDefaults.standard.string(forKey: themeVariantKey) ?? ThemeVariant.extraDark.rawValue
+        let loadedVariant = ThemeVariant(rawValue: savedVariantString) ?? .extraDark
         self.currentThemeVariant = loadedVariant
         self.perfolioTheme = PerFolioTheme.theme(for: loadedVariant)
         
