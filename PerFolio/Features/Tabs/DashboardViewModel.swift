@@ -184,8 +184,8 @@ final class DashboardViewModel: ObservableObject {
     }
     
     var totalBorrowed: String {
-        let total = borrowPositions.reduce(into: Decimal(0)) { $0 += $1.debtAmount }
-        return formatDecimal(total, maxDecimals: 2) + " USDT"
+        let total = borrowPositions.reduce(into: Decimal(0)) { $0 += $1.borrowAmount }
+        return formatDecimal(total, maxDecimals: 2) + " USDC"
     }
     
     var totalBorrowedUSD: String {
