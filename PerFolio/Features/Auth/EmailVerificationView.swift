@@ -94,9 +94,11 @@ struct EmailVerificationView: View {
                                         if code.count > 6 {
                                             code = String(code.prefix(6))
                                         }
-                                        // Auto-dismiss keyboard when 6 digits entered (but don't auto-submit)
-                                        if code.count == 6 {
+                                        // Auto-submit when 6 digits entered
+                                        if code.count == 6 && !isLoading {
                                             isCodeFocused = false
+                                            HapticManager.shared.medium()
+                                            onCodeEntered(code)
                                         }
                                     }
                                 
@@ -127,12 +129,10 @@ struct EmailVerificationView: View {
                             PerFolioButton(
                                 isLoading ? "Verifying..." : "Verify Code",
                                 isLoading: isLoading,
-                                isDisabled: code.count != 6
+                                isDisabled: code.count != 6 || isLoading
                             ) {
-                                if !isLoading {
-                                    HapticManager.shared.medium()
-                                    onCodeEntered(code)
-                                }
+                                HapticManager.shared.medium()
+                                onCodeEntered(code)
                             }
                             
                             Button(action: {

@@ -69,8 +69,14 @@ final class LandingViewModel: ObservableObject {
     }
     
     func verifyEmailCode(_ code: String) {
-        guard !isLoading else { return }
+        guard !isLoading else { 
+            AppLogger.log("⚠️ Already verifying, ignoring duplicate request", category: "auth")
+            return 
+        }
+        
+        AppLogger.log("🔐 Starting OTP verification...", category: "auth")
         isLoading = true
+        
         Task {
             do {
                 // Trim and clean the code
