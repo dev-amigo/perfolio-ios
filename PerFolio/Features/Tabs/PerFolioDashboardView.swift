@@ -14,6 +14,8 @@ struct PerFolioDashboardView: View {
                     goldenHeroCard
                     walletConnectionCard
                     yourGoldHoldingsCard
+                    statisticsSection
+                    paxgPriceChartSection
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 24)
@@ -247,6 +249,150 @@ struct PerFolioDashboardView: View {
                         "Failed to load balances: \(error.localizedDescription)",
                         style: .danger
                     )
+                }
+            }
+        }
+    }
+    
+    // MARK: - Statistics Section
+    
+    private var statisticsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            PerFolioSectionHeader(
+                icon: "chart.bar.fill",
+                title: "Your Statistics"
+            )
+            
+            // Statistics Grid
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                statisticCard(
+                    icon: "chart.bar.fill",
+                    title: "TOTAL\nCOLLATERAL",
+                    value: viewModel.totalCollateral,
+                    subtitle: viewModel.totalCollateralUSD
+                )
+                
+                statisticCard(
+                    icon: "arrow.up.circle.fill",
+                    title: "TOTAL\nBORROWED",
+                    value: viewModel.totalBorrowed,
+                    subtitle: viewModel.totalBorrowedUSD
+                )
+                
+                statisticCard(
+                    icon: "shield.checkered.fill",
+                    title: "WEIGHTED\nHEALTH FACTOR",
+                    value: viewModel.healthFactor,
+                    subtitle: viewModel.healthStatus,
+                    healthColor: viewModel.healthStatusColor
+                )
+                
+                statisticCard(
+                    icon: "percent",
+                    title: "CURRENT\nBORROW APY",
+                    value: viewModel.borrowAPY,
+                    subtitle: "Max LTV: \(viewModel.maxLTV)"
+                )
+            }
+            
+            // Vault Configuration
+            PerFolioCard {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("VAULT CONFIGURATION")
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                    
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+                        vaultInfoItem(title: "Liquidation Threshold", value: viewModel.liquidationThreshold)
+                        vaultInfoItem(title: "Liquidation Penalty", value: viewModel.liquidationPenalty)
+                        vaultInfoItem(title: "PAXG Current Price", value: viewModel.paxgCurrentPrice)
+                        vaultInfoItem(title: "Active Positions", value: viewModel.activePositions)
+                    }
+                }
+            }
+        }
+    }
+    
+    private func statisticCard(icon: String, title: String, value: String, subtitle: String, healthColor: Color? = nil) -> some View {
+        PerFolioCard(style: .secondary) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 8) {
+                    Image(systemName: icon)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                    
+                    Text(title)
+                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                
+                Text(value)
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                
+                Text(subtitle)
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundStyle(healthColor ?? themeManager.perfolioTheme.textSecondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+    
+    private func vaultInfoItem(title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.system(size: 12, weight: .regular, design: .rounded))
+                .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+            Text(value)
+                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+        }
+    }
+    
+    // MARK: - PAXG Price Chart Section
+    
+    private var paxgPriceChartSection: some View {
+        PerFolioCard {
+            VStack(alignment: .leading, spacing: 16) {
+                HStack(spacing: 8) {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                    
+                    Text("PAXG Price (90 Days)")
+                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                }
+                
+                // Current Price
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(viewModel.paxgCurrentPriceFormatted)
+                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                    
+                    Text(viewModel.paxgPriceChange)
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .foregroundStyle(viewModel.priceChangeColor)
+                }
+                
+                // Chart
+                if !viewModel.priceHistory.isEmpty {
+                    PAXGPriceChartView(data: viewModel.priceHistory)
+                        .frame(height: 200)
+                } else {
+                    HStack {
+                        Spacer()
+                        ProgressView()
+                        Text("Loading price data...")
+                            .font(.system(size: 14, weight: .medium, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                        Spacer()
+                    }
+                    .frame(height: 200)
                 }
             }
         }
