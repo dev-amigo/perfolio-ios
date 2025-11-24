@@ -7,34 +7,26 @@ struct SettingsView: View {
     var onLogout: (() -> Void)?
     
     var body: some View {
-        NavigationView {
-            ZStack {
-                themeManager.perfolioTheme.primaryBackground.ignoresSafeArea()
+        NavigationStack {
+            List {
+                // User Profile Section
+                userProfileSection
                 
-                ScrollView {
-                    VStack(spacing: 24) {
-                        // User Profile Card
-                        userProfileCard
-                        
-                        // App Settings
-                        appSettingsSection
-                        
-                        // Support & Legal
-                        supportSection
-                        
-                        // Libraries & Dependencies
-                        librariesSection
-                        
-                        // Logout Button
-                        logoutButton
-                        
-                        // Version Info
-                        versionInfo
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 24)
-                }
+                // App Settings Section
+                appSettingsSection
+                
+                // Support & Legal Section
+                supportLegalSection
+                
+                // Libraries Section
+                librariesSection
+                
+                // Logout Section
+                logoutSection
             }
+            .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
+            .background(themeManager.perfolioTheme.primaryBackground)
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
@@ -46,6 +38,7 @@ struct SettingsView: View {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 24))
                             .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                            .symbolRenderingMode(.hierarchical)
                     }
                 }
             }
@@ -67,34 +60,39 @@ struct SettingsView: View {
             } message: {
                 Text("Are you sure you want to logout?")
             }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                versionFooter
+            }
         }
     }
     
-    // MARK: - User Profile Card
+    // MARK: - User Profile Section
     
-    private var userProfileCard: some View {
-        PerFolioCard {
-            VStack(spacing: 16) {
+    private var userProfileSection: some View {
+        Section {
+            HStack(spacing: 16) {
                 // Profile Icon
                 Circle()
-                    .fill(themeManager.perfolioTheme.tintColor.opacity(0.2))
-                    .frame(width: 80, height: 80)
+                    .fill(themeManager.perfolioTheme.tintColor.opacity(0.15))
+                    .frame(width: 64, height: 64)
                     .overlay(
-                        Image(systemName: "person.fill")
-                            .font(.system(size: 36))
+                        Image(systemName: "person.circle.fill")
+                            .font(.system(size: 32))
                             .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                            .symbolRenderingMode(.hierarchical)
                     )
                 
                 // User Info
-                VStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: 6) {
                     Text(viewModel.userEmail)
-                        .font(.system(size: 18, weight: .semibold, design: .rounded))
+                        .font(.system(size: 17, weight: .semibold, design: .rounded))
                         .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                        .lineLimit(1)
                     
                     if let walletAddress = viewModel.walletAddress {
-                        HStack(spacing: 8) {
+                        HStack(spacing: 6) {
                             Text(viewModel.truncatedAddress(walletAddress))
-                                .font(.system(size: 14, weight: .regular, design: .monospaced))
+                                .font(.system(size: 13, weight: .regular, design: .monospaced))
                                 .foregroundStyle(themeManager.perfolioTheme.textSecondary)
                             
                             Button {
@@ -102,268 +100,299 @@ struct SettingsView: View {
                                 viewModel.copyAddress(walletAddress)
                             } label: {
                                 Image(systemName: viewModel.addressCopied ? "checkmark.circle.fill" : "doc.on.doc")
-                                    .font(.system(size: 14))
+                                    .font(.system(size: 12))
                                     .foregroundStyle(viewModel.addressCopied ? .green : themeManager.perfolioTheme.tintColor)
+                                    .symbolRenderingMode(.hierarchical)
                             }
                         }
                     }
                 }
+                
+                Spacer()
             }
-            .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
+            .listRowBackground(themeManager.perfolioTheme.secondaryBackground)
         }
     }
     
     // MARK: - App Settings Section
     
     private var appSettingsSection: some View {
-        VStack(spacing: 16) {
-            sectionHeader("App Settings")
-            
-            PerFolioCard {
-                VStack(spacing: 0) {
-                    // Theme Toggle
-                    SettingsRow(
-                        icon: "moon.fill",
-                        title: "Dark Mode",
-                        subtitle: "Always enabled"
-                    ) {
-                        Toggle("", isOn: .constant(true))
-                            .labelsHidden()
-                            .disabled(true)
-                            .tint(themeManager.perfolioTheme.tintColor)
-                    }
-                    
-                    Divider()
-                        .background(themeManager.perfolioTheme.textSecondary.opacity(0.2))
-                    
-                    // Haptic Feedback
-                    SettingsRow(
-                        icon: "hand.tap.fill",
-                        title: "Haptic Feedback",
-                        subtitle: "Vibration on interactions"
-                    ) {
-                        Toggle("", isOn: $viewModel.isHapticEnabled)
-                            .labelsHidden()
-                            .tint(themeManager.perfolioTheme.tintColor)
-                            .onChange(of: viewModel.isHapticEnabled) { _, newValue in
-                                if newValue {
-                                    HapticManager.shared.medium()
-                                }
-                            }
-                    }
-                    
-                    Divider()
-                        .background(themeManager.perfolioTheme.textSecondary.opacity(0.2))
-                    
-                    // Sound Effects
-                    SettingsRow(
-                        icon: "speaker.wave.2.fill",
-                        title: "Sound Effects",
-                        subtitle: "Audio feedback on haptics"
-                    ) {
-                        Toggle("", isOn: $viewModel.isSoundEnabled)
-                            .labelsHidden()
-                            .tint(themeManager.perfolioTheme.tintColor)
-                            .disabled(!viewModel.isHapticEnabled)
-                            .onChange(of: viewModel.isSoundEnabled) { _, newValue in
-                                if newValue {
-                                    HapticManager.shared.medium()
-                                }
-                            }
-                    }
+        Section {
+            // Dark Mode (always on)
+            HStack(spacing: 12) {
+                Image(systemName: "moon.fill")
+                    .font(.system(size: 18))
+                    .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                    .symbolRenderingMode(.hierarchical)
+                    .frame(width: 28, alignment: .center)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Dark Mode")
+                        .font(.system(size: 17, design: .rounded))
+                        .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                    Text("Always enabled")
+                        .font(.system(size: 13))
+                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
                 }
+                
+                Spacer()
+                
+                Toggle("", isOn: .constant(true))
+                    .labelsHidden()
+                    .disabled(true)
+                    .tint(themeManager.perfolioTheme.tintColor)
             }
+            .listRowBackground(themeManager.perfolioTheme.secondaryBackground)
+            
+            // Haptic Feedback
+            HStack(spacing: 12) {
+                Image(systemName: "hand.tap.fill")
+                    .font(.system(size: 18))
+                    .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                    .symbolRenderingMode(.hierarchical)
+                    .frame(width: 28, alignment: .center)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Haptic Feedback")
+                        .font(.system(size: 17, design: .rounded))
+                        .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                    Text("Vibration on interactions")
+                        .font(.system(size: 13))
+                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                }
+                
+                Spacer()
+                
+                Toggle("", isOn: $viewModel.isHapticEnabled)
+                    .labelsHidden()
+                    .tint(themeManager.perfolioTheme.tintColor)
+                    .onChange(of: viewModel.isHapticEnabled) { _, newValue in
+                        if newValue {
+                            HapticManager.shared.medium()
+                        }
+                    }
+            }
+            .listRowBackground(themeManager.perfolioTheme.secondaryBackground)
+            
+            // Sound Effects
+            HStack(spacing: 12) {
+                Image(systemName: "speaker.wave.2.fill")
+                    .font(.system(size: 18))
+                    .foregroundStyle(viewModel.isHapticEnabled ? themeManager.perfolioTheme.tintColor : themeManager.perfolioTheme.textTertiary)
+                    .symbolRenderingMode(.hierarchical)
+                    .frame(width: 28, alignment: .center)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Sound Effects")
+                        .font(.system(size: 17, design: .rounded))
+                        .foregroundStyle(viewModel.isHapticEnabled ? themeManager.perfolioTheme.textPrimary : themeManager.perfolioTheme.textTertiary)
+                    Text("Audio feedback on haptics")
+                        .font(.system(size: 13))
+                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                }
+                
+                Spacer()
+                
+                Toggle("", isOn: $viewModel.isSoundEnabled)
+                    .labelsHidden()
+                    .disabled(!viewModel.isHapticEnabled)
+                    .tint(themeManager.perfolioTheme.tintColor)
+                    .onChange(of: viewModel.isSoundEnabled) { _, newValue in
+                        if newValue {
+                            HapticManager.shared.medium()
+                        }
+                    }
+            }
+            .listRowBackground(themeManager.perfolioTheme.secondaryBackground)
+        } header: {
+            Text("App Settings")
+                .foregroundStyle(themeManager.perfolioTheme.textPrimary)
         }
     }
     
-    // MARK: - Support Section
+    // MARK: - Support & Legal Section
     
-    private var supportSection: some View {
-        VStack(spacing: 16) {
-            sectionHeader("Support & Legal")
-            
-            PerFolioCard {
-                VStack(spacing: 0) {
-                    SettingsRow(
-                        icon: "envelope.fill",
-                        title: "Email Support",
-                        subtitle: "support@perfolio.com"
-                    ) {
-                        Button {
-                            HapticManager.shared.light()
-                            viewModel.openEmail()
-                        } label: {
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(themeManager.perfolioTheme.textSecondary)
-                        }
+    private var supportLegalSection: some View {
+        Section {
+            // Email Support
+            Button {
+                HapticManager.shared.light()
+                viewModel.openEmail()
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "envelope.fill")
+                        .font(.system(size: 18))
+                        .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                        .symbolRenderingMode(.hierarchical)
+                        .frame(width: 28, alignment: .center)
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Email Support")
+                            .font(.system(size: 17, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                        Text("support@perfolio.com")
+                            .font(.system(size: 13))
+                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
                     }
                     
-                    Divider()
-                        .background(themeManager.perfolioTheme.textSecondary.opacity(0.2))
+                    Spacer()
                     
-                    SettingsRow(
-                        icon: "doc.text.fill",
-                        title: "Terms of Service",
-                        subtitle: "Read our terms"
-                    ) {
-                        Button {
-                            HapticManager.shared.light()
-                            viewModel.openTermsOfService()
-                        } label: {
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(themeManager.perfolioTheme.textSecondary)
-                        }
-                    }
-                    
-                    Divider()
-                        .background(themeManager.perfolioTheme.textSecondary.opacity(0.2))
-                    
-                    SettingsRow(
-                        icon: "hand.raised.fill",
-                        title: "Privacy Policy",
-                        subtitle: "Your data privacy"
-                    ) {
-                        Button {
-                            HapticManager.shared.light()
-                            viewModel.openPrivacyPolicy()
-                        } label: {
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(themeManager.perfolioTheme.textSecondary)
-                        }
-                    }
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(themeManager.perfolioTheme.textTertiary)
                 }
             }
+            .listRowBackground(themeManager.perfolioTheme.secondaryBackground)
+            
+            // Terms of Service
+            Button {
+                HapticManager.shared.light()
+                viewModel.openTermsOfService()
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "doc.text.fill")
+                        .font(.system(size: 18))
+                        .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                        .symbolRenderingMode(.hierarchical)
+                        .frame(width: 28, alignment: .center)
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Terms of Service")
+                            .font(.system(size: 17, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                        Text("Read our terms")
+                            .font(.system(size: 13))
+                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(themeManager.perfolioTheme.textTertiary)
+                }
+            }
+            .listRowBackground(themeManager.perfolioTheme.secondaryBackground)
+            
+            // Privacy Policy
+            Button {
+                HapticManager.shared.light()
+                viewModel.openPrivacyPolicy()
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "hand.raised.fill")
+                        .font(.system(size: 18))
+                        .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                        .symbolRenderingMode(.hierarchical)
+                        .frame(width: 28, alignment: .center)
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Privacy Policy")
+                            .font(.system(size: 17, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                        Text("Your data privacy")
+                            .font(.system(size: 13))
+                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(themeManager.perfolioTheme.textTertiary)
+                }
+            }
+            .listRowBackground(themeManager.perfolioTheme.secondaryBackground)
+        } header: {
+            Text("Support & Legal")
+                .foregroundStyle(themeManager.perfolioTheme.textPrimary)
         }
     }
     
     // MARK: - Libraries Section
     
     private var librariesSection: some View {
-        VStack(spacing: 16) {
-            sectionHeader("Libraries & Dependencies")
-            
-            PerFolioCard {
-                VStack(spacing: 0) {
-                    ForEach(viewModel.libraries.indices, id: \.self) { index in
-                        if index > 0 {
-                            Divider()
-                                .background(themeManager.perfolioTheme.textSecondary.opacity(0.2))
+        Section {
+            ForEach(viewModel.libraries) { library in
+                Button {
+                    if library.licenseURL != nil {
+                        HapticManager.shared.light()
+                        viewModel.openLibraryLicense(library)
+                    }
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "shippingbox.fill")
+                            .font(.system(size: 18))
+                            .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                            .symbolRenderingMode(.hierarchical)
+                            .frame(width: 28, alignment: .center)
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(library.name)
+                                .font(.system(size: 17, design: .rounded))
+                                .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                            Text(library.version)
+                                .font(.system(size: 13))
+                                .foregroundStyle(themeManager.perfolioTheme.textSecondary)
                         }
                         
-                        let library = viewModel.libraries[index]
-                        SettingsRow(
-                            icon: "shippingbox.fill",
-                            title: library.name,
-                            subtitle: library.version
-                        ) {
-                            if let _ = library.licenseURL {
-                                Button {
-                                    HapticManager.shared.light()
-                                    viewModel.openLibraryLicense(library)
-                                } label: {
-                                    Image(systemName: "chevron.right")
-                                        .font(.system(size: 14, weight: .semibold))
-                                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
-                                }
-                            }
+                        Spacer()
+                        
+                        if library.licenseURL != nil {
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(themeManager.perfolioTheme.textTertiary)
                         }
                     }
                 }
+                .disabled(library.licenseURL == nil)
+                .listRowBackground(themeManager.perfolioTheme.secondaryBackground)
             }
+        } header: {
+            Text("Libraries & Dependencies")
+                .foregroundStyle(themeManager.perfolioTheme.textPrimary)
         }
     }
     
-    // MARK: - Logout Button
+    // MARK: - Logout Section
     
-    private var logoutButton: some View {
-        Button {
-            HapticManager.shared.medium()
-            viewModel.showLogoutConfirmation()
-        } label: {
-            HStack {
-                Image(systemName: "rectangle.portrait.and.arrow.right")
-                    .font(.system(size: 16, weight: .semibold))
-                
-                Text("Logout")
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+    private var logoutSection: some View {
+        Section {
+            Button {
+                HapticManager.shared.medium()
+                viewModel.showLogoutConfirmation()
+            } label: {
+                HStack {
+                    Spacer()
+                    
+                    Label("Logout", systemImage: "rectangle.portrait.and.arrow.right")
+                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.white)
+                    
+                    Spacer()
+                }
+                .padding(.vertical, 4)
             }
-            .foregroundStyle(.white)
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(.red)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .listRowBackground(Color.red)
         }
     }
     
-    // MARK: - Version Info
+    // MARK: - Version Footer
     
-    private var versionInfo: some View {
-        VStack(spacing: 8) {
-            Text("PerFolio")
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
-                .foregroundStyle(themeManager.perfolioTheme.textSecondary)
-            
+    private var versionFooter: some View {
+        VStack(spacing: 4) {
             Text("Version \(viewModel.appVersion) (\(viewModel.buildNumber))")
                 .font(.system(size: 12, weight: .regular, design: .rounded))
-                .foregroundStyle(themeManager.perfolioTheme.textSecondary.opacity(0.7))
+                .foregroundStyle(themeManager.perfolioTheme.textTertiary)
             
             Text("Made with ❤️ in India")
-                .font(.system(size: 12, weight: .regular, design: .rounded))
-                .foregroundStyle(themeManager.perfolioTheme.textSecondary.opacity(0.7))
+                .font(.system(size: 11, weight: .regular, design: .rounded))
+                .foregroundStyle(themeManager.perfolioTheme.textTertiary.opacity(0.7))
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 16)
-    }
-    
-    // MARK: - Helper Views
-    
-    private func sectionHeader(_ title: String) -> some View {
-        Text(title)
-            .font(.system(size: 20, weight: .semibold, design: .rounded))
-            .foregroundStyle(themeManager.perfolioTheme.textPrimary)
-            .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-// MARK: - Settings Row Component
-
-struct SettingsRow<Trailing: View>: View {
-    let icon: String
-    let title: String
-    let subtitle: String
-    @ViewBuilder let trailing: () -> Trailing
-    @EnvironmentObject private var themeManager: ThemeManager
-    
-    var body: some View {
-        HStack(spacing: 16) {
-            // Icon
-            Image(systemName: icon)
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(themeManager.perfolioTheme.tintColor)
-                .frame(width: 32, height: 32)
-            
-            // Title & Subtitle
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(size: 16, weight: .medium, design: .rounded))
-                    .foregroundStyle(themeManager.perfolioTheme.textPrimary)
-                
-                Text(subtitle)
-                    .font(.system(size: 13, weight: .regular, design: .rounded))
-                    .foregroundStyle(themeManager.perfolioTheme.textSecondary)
-            }
-            
-            Spacer()
-            
-            // Trailing content
-            trailing()
-        }
-        .padding(.horizontal, 16)
         .padding(.vertical, 12)
+        .background(themeManager.perfolioTheme.primaryBackground.opacity(0.95))
     }
 }
 
@@ -371,4 +400,3 @@ struct SettingsRow<Trailing: View>: View {
     SettingsView()
         .environmentObject(ThemeManager())
 }
-
