@@ -15,11 +15,11 @@ DEFAULT_OAUTH_PROVIDER = email
 // OnMeta Configuration (INR on-ramp)
 ONMETA_API_KEY = 3adc6318-8e68-41b8-8d39-dcb354eb25ce
 ONMETA_BASE_URL = https:/$()/platform.onmeta.in
+TRANSAK_API_KEY = 4f4d1fff-3bba-4749-aa07-11d0667adbf4
 
 // 1inch DEX Configuration (for USDT→PAXG swaps)
 ONEINCH_API_KEY = your_1inch_api_key_here
 ZEROX_API_KEY = 500e6659-f085-4d26-9fb4-933eea6d7170
-
 
 
 

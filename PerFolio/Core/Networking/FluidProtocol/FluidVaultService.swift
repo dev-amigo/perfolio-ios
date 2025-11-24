@@ -484,16 +484,64 @@ final class FluidVaultService: ObservableObject {
         request: TransactionRequest,
         wallet: any PrivySDK.EmbeddedEthereumWallet
     ) async throws -> String {
+        AppLogger.log("🔑 Sending transaction via Privy embedded wallet with gas sponsorship", category: "fluid")
+        AppLogger.log("📝 Transaction details:", category: "fluid")
+        AppLogger.log("   From: \(request.from)", category: "fluid")
+        AppLogger.log("   To: \(request.to)", category: "fluid")
+        AppLogger.log("   Value: \(request.value)", category: "fluid")
+        AppLogger.log("   Data: \(request.data.prefix(66))...", category: "fluid")
+        AppLogger.log("💡 NOTE: Gas sponsorship requires policies configured in Privy Dashboard", category: "fluid")
+        AppLogger.log("💡 Policies must match: Chain (eip155:1), Contract (\(request.to)), Method", category: "fluid")
+        
         let chainId = await wallet.provider.chainId
+        
+        // Create unsigned transaction WITHOUT gas/gasPrice
+        // When these are nil, Privy's infrastructure will:
+        // 1. Check if transaction matches sponsorship policies
+        // 2. If matched, Privy sponsors the gas
+        // 3. If not matched, user needs ETH for gas
         let unsignedTx = PrivySDK.EthereumRpcRequest.UnsignedEthTransaction(
             from: request.from,
             to: request.to,
             data: request.data,
             value: makeHexQuantity(request.value),
             chainId: .int(chainId)
+            // gas: nil - Let Privy estimate
+            // gasPrice: nil - Let Privy handle (will sponsor if policy matches)
         )
+        
+        AppLogger.log("📤 Submitting transaction via wallet.provider.request()...", category: "fluid")
+        AppLogger.log("   Chain ID: \(chainId)", category: "fluid")
+        AppLogger.log("   Gas/GasPrice: nil (Privy will sponsor if policies match)", category: "fluid")
+        
         let rpcRequest = try PrivySDK.EthereumRpcRequest.ethSendTransaction(transaction: unsignedTx)
-        return try await wallet.provider.request(rpcRequest)
+        
+        do {
+            let txHash = try await wallet.provider.request(rpcRequest)
+            AppLogger.log("✅ Transaction submitted successfully: \(txHash)", category: "fluid")
+            AppLogger.log("💰 Gas was sponsored by Privy (no ETH deducted from user)", category: "fluid")
+            return txHash
+        } catch {
+            AppLogger.log("❌ Transaction failed: \(error)", category: "fluid")
+            
+            // Enhanced error message for gas sponsorship issues
+            let errorMessage = error.localizedDescription
+            if errorMessage.contains("insufficient funds") {
+                AppLogger.log("🚨 INSUFFICIENT FUNDS ERROR - Possible causes:", category: "fluid")
+                AppLogger.log("   1. Gas sponsorship policy not configured in Privy Dashboard", category: "fluid")
+                AppLogger.log("   2. Transaction doesn't match policy criteria:", category: "fluid")
+                AppLogger.log("      • Chain must be: eip155:1 (Ethereum mainnet)", category: "fluid")
+                AppLogger.log("      • Contract must be whitelisted: \(request.to)", category: "fluid")
+                AppLogger.log("      • Method signature must be whitelisted", category: "fluid")
+                AppLogger.log("   3. Daily spending limit exceeded", category: "fluid")
+                AppLogger.log("   4. Policy is disabled or expired", category: "fluid")
+                AppLogger.log("", category: "fluid")
+                AppLogger.log("🔧 Fix: Configure gas sponsorship policy at:", category: "fluid")
+                AppLogger.log("   https://dashboard.privy.io/apps/\(environment.privyAppID)/policies", category: "fluid")
+            }
+            
+            throw error
+        }
     }
     
     private func sendSponsoredTransaction(
