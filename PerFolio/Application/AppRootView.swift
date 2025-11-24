@@ -9,6 +9,10 @@ struct AppRootView: View {
             switch route {
             case .splash:
                 SplashView { checkAuthAndProceed() }
+            case .onboarding:
+                OnboardingView {
+                    proceedToLanding()
+                }
             case .landing:
                 LandingView(authCoordinator: privyCoordinator) {
                     proceedToMain()
@@ -26,6 +30,16 @@ struct AppRootView: View {
     }
 
     private func checkAuthAndProceed() {
+        // Check if onboarding was completed
+        let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
+        
+        if !hasCompletedOnboarding {
+            // First time user, show onboarding
+            AppLogger.log("👋 First time user, showing onboarding", category: "app")
+            route = .onboarding
+            return
+        }
+        
         // Check if user has an active session
         let hasWalletAddress = UserDefaults.standard.string(forKey: "userWalletAddress") != nil
         let hasAccessToken = UserDefaults.standard.string(forKey: "privyAccessToken") != nil
@@ -42,6 +56,11 @@ struct AppRootView: View {
     }
 
     private func proceedToLanding() {
+        // Mark onboarding as completed if coming from onboarding
+        if route == .onboarding {
+            UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
+            AppLogger.log("✅ Onboarding completed", category: "app")
+        }
         route = .landing
     }
 
@@ -52,6 +71,7 @@ struct AppRootView: View {
 
     private enum Route {
         case splash
+        case onboarding
         case landing
         case main
     }
