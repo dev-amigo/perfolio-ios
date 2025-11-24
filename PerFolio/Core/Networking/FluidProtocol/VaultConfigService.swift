@@ -4,7 +4,7 @@ import Combine
 /// Service for fetching Fluid Protocol vault configuration
 /// Retrieves lending parameters (max LTV, liquidation threshold, etc.) from blockchain
 @MainActor
-final class VaultConfigService: ObservableObject {
+class VaultConfigService: ObservableObject {
     
     // MARK: - Published State
     

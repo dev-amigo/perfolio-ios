@@ -254,17 +254,7 @@ class MockWeb3Client: Web3Client {
     }
 }
 
-class MockVaultConfigService: VaultConfigService {
-    var mockConfig: VaultConfig?
-    var shouldThrowError = false
-    
-    override func fetchVaultConfig(vaultAddress: String = ContractAddresses.fluidPaxgUsdcVault) async throws -> VaultConfig {
-        if shouldThrowError {
-            throw VaultConfigError.networkError(NSError(domain: "test", code: -1))
-        }
-        return mockConfig ?? VaultConfig.mock
-    }
-}
+// MockVaultConfigService moved to MockObjects.swift to avoid duplication
 
 class MockPriceOracleService: PriceOracleService {
     var mockPrice: Decimal = 4000.0

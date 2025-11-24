@@ -2,7 +2,7 @@ import Foundation
 
 /// Service for Transak off-ramp (crypto → fiat withdrawals)
 /// Handles USDC → INR bank transfers
-final class TransakService {
+class TransakService {
     
     // MARK: - Types
     

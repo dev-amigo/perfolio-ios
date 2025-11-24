@@ -3,7 +3,7 @@ import Foundation
 /// Fetches borrow positions directly from the Fluid Vault Resolver so loans
 /// survive reinstalls and stay in sync with on-chain data.
 @MainActor
-final class FluidPositionsService {
+class FluidPositionsService {
     
     private let web3Client: Web3Client
     private let vaultConfigService: VaultConfigService

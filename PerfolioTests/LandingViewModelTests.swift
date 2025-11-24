@@ -1,6 +1,5 @@
 import XCTest
-import Privy
-@testable import Amigo_Gold
+@testable import PerFolio
 
 final class LandingViewModelTests: XCTestCase {
     func testOnAppearCallsPrepare() async {

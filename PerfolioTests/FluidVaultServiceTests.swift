@@ -537,17 +537,7 @@ class MockERC20Contract: ERC20Contract {
     }
 }
 
-class MockVaultConfigService: VaultConfigService {
-    var mockConfig: VaultConfig?
-    var shouldThrowError = false
-    
-    override func fetchVaultConfig() async throws -> VaultConfig {
-        if shouldThrowError {
-            throw NSError(domain: "TestError", code: 1, userInfo: nil)
-        }
-        return mockConfig ?? VaultConfig.mock
-    }
-}
+// MockVaultConfigService moved to MockObjects.swift to avoid duplication
 
 class MockPriceOracleService: PriceOracleService {
     var mockPrice: Decimal = 4000.0

@@ -529,31 +529,5 @@ final class WithdrawViewModelTests: XCTestCase {
     }
 }
 
-// MARK: - Mock TransakService
-
-class MockTransakService: TransakService {
-    var mockURL: URL?
-    var shouldThrowError = false
-    var buildWithdrawURLCalled = false
-    var lastCryptoAmount: String?
-    var lastCryptoCurrency: String?
-    var lastFiatCurrency: String?
-    
-    override func buildWithdrawURL(
-        cryptoAmount: String,
-        cryptoCurrency: String = "USDC",
-        fiatCurrency: String = "INR"
-    ) throws -> URL {
-        buildWithdrawURLCalled = true
-        lastCryptoAmount = cryptoAmount
-        lastCryptoCurrency = cryptoCurrency
-        lastFiatCurrency = fiatCurrency
-        
-        if shouldThrowError {
-            throw TransakError.invalidAmount
-        }
-        
-        return mockURL ?? URL(string: "https://global.transak.com")!
-    }
-}
+// MARK: - Mock TransakService (moved to MockObjects.swift to avoid duplication)
 

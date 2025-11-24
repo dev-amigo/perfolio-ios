@@ -101,3 +101,164 @@ enum VaultConfigError: Error {
     case contractReverted
 }
 
+// MARK: - Mock Services
+
+@MainActor
+class MockFluidVaultService: FluidVaultService {
+    // Mock properties for BorrowViewModel tests
+    var mockPAXGPrice: Decimal = 4000.0
+    var mockVaultConfig: VaultConfig?
+    var mockCurrentAPY: Decimal = 5.5
+    var mockNFTId: String = "8896"
+    var shouldThrowError = false
+    var executeBorrowCalled = false
+    
+    // Mock properties for LoanActionHandler tests
+    var borrowCalled = false
+    var lastBorrowRequest: BorrowRequest?
+    var borrowResult: Result<String, Error> = .success("0xmocktxhash")
+    
+    var repayCalled = false
+    var lastRepayAmount: Decimal?
+    var lastPosition: BorrowPosition?
+    var repayResult: Result<Void, Error> = .success(())
+    
+    var addCollateralCalled = false
+    var lastCollateralAmount: Decimal?
+    var addCollateralResult: Result<Void, Error> = .success(())
+    
+    var withdrawCalled = false
+    var lastWithdrawAmount: Decimal?
+    var withdrawResult: Result<Void, Error> = .success(())
+    
+    var closeCalled = false
+    var closeResult: Result<Void, Error> = .success(())
+    
+    override func initialize() async throws {
+        if shouldThrowError {
+            throw NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Mock initialization error"])
+        }
+        
+        paxgPrice = mockPAXGPrice
+        vaultConfig = mockVaultConfig
+        currentAPY = mockCurrentAPY
+    }
+    
+    override func executeBorrow(request: BorrowRequest) async throws -> String {
+        executeBorrowCalled = true
+        borrowCalled = true
+        lastBorrowRequest = request
+        
+        if shouldThrowError {
+            throw NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Mock borrow error"])
+        }
+        
+        switch borrowResult {
+        case .success:
+            return mockNFTId
+        case .failure(let error):
+            throw error
+        }
+    }
+    
+    override func repay(position: BorrowPosition, amount: Decimal) async throws {
+        repayCalled = true
+        lastRepayAmount = amount
+        lastPosition = position
+        switch repayResult {
+        case .success:
+            return
+        case .failure(let error):
+            throw error
+        }
+    }
+    
+    override func addCollateral(position: BorrowPosition, amount: Decimal) async throws {
+        addCollateralCalled = true
+        lastCollateralAmount = amount
+        lastPosition = position
+        switch addCollateralResult {
+        case .success:
+            return
+        case .failure(let error):
+            throw error
+        }
+    }
+    
+    override func withdraw(position: BorrowPosition, amount: Decimal) async throws {
+        withdrawCalled = true
+        lastWithdrawAmount = amount
+        lastPosition = position
+        switch withdrawResult {
+        case .success:
+            return
+        case .failure(let error):
+            throw error
+        }
+    }
+    
+    override func close(position: BorrowPosition) async throws {
+        closeCalled = true
+        lastPosition = position
+        switch closeResult {
+        case .success:
+            return
+        case .failure(let error):
+            throw error
+        }
+    }
+}
+
+@MainActor
+class MockFluidPositionsService: FluidPositionsService {
+    var mockPositions: [BorrowPosition] = []
+    var shouldThrowError = false
+    var errorToThrow: Error = Web3Error.networkError("Mock error")
+    
+    override func fetchPositions(for owner: String) async throws -> [BorrowPosition] {
+        if shouldThrowError {
+            throw errorToThrow
+        }
+        return mockPositions
+    }
+}
+
+// MockWeb3Client and MockERC20Contract removed - actors cannot be subclassed
+// Test files should use their own specialized mocks when needed
+
+@MainActor
+class MockVaultConfigService: VaultConfigService {
+    var mockConfig: VaultConfig?
+    var shouldThrowError = false
+    var errorToThrow: Error = Web3Error.networkError("Mock error")
+    
+    override func fetchVaultConfig(vaultAddress: String = ContractAddresses.fluidPaxgUsdcVault) async throws -> VaultConfig {
+        if shouldThrowError {
+            throw errorToThrow
+        }
+        return mockConfig ?? VaultConfig.mock
+    }
+}
+
+class MockTransakService: TransakService {
+    var mockURL: URL?
+    var shouldThrowError = false
+    var errorToThrow: Error = NSError(domain: "MockError", code: -1)
+    var buildWithdrawURLCalled = false
+    var lastCryptoAmount: String?
+    
+    override func buildWithdrawURL(
+        cryptoAmount: String,
+        cryptoCurrency: String = "USDC",
+        fiatCurrency: String = "INR"
+    ) throws -> URL {
+        buildWithdrawURLCalled = true
+        lastCryptoAmount = cryptoAmount
+        
+        if shouldThrowError {
+            throw errorToThrow
+        }
+        return mockURL ?? URL(string: "https://global.transak.com")!
+    }
+}
+

@@ -516,35 +516,5 @@ final class BorrowViewModelTests: XCTestCase {
     }
 }
 
-// MARK: - Mock FluidVaultService
-
-@MainActor
-class MockFluidVaultService: FluidVaultService {
-    var mockPAXGPrice: Decimal = 4000.0
-    var mockVaultConfig: VaultConfig?
-    var mockCurrentAPY: Decimal = 5.5
-    var mockNFTId: String = "8896"
-    var shouldThrowError = false
-    var executeBorrowCalled = false
-    
-    override func initialize() async throws {
-        if shouldThrowError {
-            throw NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Mock initialization error"])
-        }
-        
-        paxgPrice = mockPAXGPrice
-        vaultConfig = mockVaultConfig
-        currentAPY = mockCurrentAPY
-    }
-    
-    override func executeBorrow(request: BorrowRequest) async throws -> String {
-        executeBorrowCalled = true
-        
-        if shouldThrowError {
-            throw NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Mock borrow error"])
-        }
-        
-        return mockNFTId
-    }
-}
+// Note: MockFluidVaultService moved to MockObjects.swift to avoid duplication
 

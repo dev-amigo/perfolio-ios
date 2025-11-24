@@ -1,22 +1,41 @@
 import Foundation
 
-struct TokenBalance {
-    let address: String
-    let symbol: String
-    let decimals: Int
-    let rawBalance: String  // Hex string
-    let formattedBalance: String
-    let decimalBalance: Decimal
+public struct TokenBalance {
+    public let address: String
+    public let symbol: String
+    public let decimals: Int
+    public let rawBalance: String  // Hex string
+    public let formattedBalance: String
+    public let decimalBalance: Decimal
+    
+    public init(address: String, symbol: String, decimals: Int, rawBalance: String, formattedBalance: String, decimalBalance: Decimal) {
+        self.address = address
+        self.symbol = symbol
+        self.decimals = decimals
+        self.rawBalance = rawBalance
+        self.formattedBalance = formattedBalance
+        self.decimalBalance = decimalBalance
+    }
+    
+    // Convenience init for tests
+    public init(address: String, symbol: String, decimals: Int, balance: String, decimalBalance: Decimal) {
+        self.address = address
+        self.symbol = symbol
+        self.decimals = decimals
+        self.rawBalance = balance
+        self.formattedBalance = CurrencyFormatter.formatToken(decimalBalance, symbol: symbol)
+        self.decimalBalance = decimalBalance
+    }
 }
 
-actor ERC20Contract {
+public actor ERC20Contract {
     // Contract addresses on Ethereum Mainnet
-    enum Token {
+    public enum Token {
         case paxg
         case usdt
         case usdc  // NEW: For Fluid Protocol borrow
         
-        var address: String {
+        public var address: String {
             switch self {
             case .paxg:
                 return "0x45804880De22913dAFE09f4980848ECE6EcbAf78"
@@ -27,7 +46,7 @@ actor ERC20Contract {
             }
         }
         
-        var symbol: String {
+        public var symbol: String {
             switch self {
             case .paxg: return "PAXG"
             case .usdt: return "USDT"
@@ -35,7 +54,7 @@ actor ERC20Contract {
             }
         }
         
-        var decimals: Int {
+        public var decimals: Int {
             switch self {
             case .paxg: return 18
             case .usdt: return 6

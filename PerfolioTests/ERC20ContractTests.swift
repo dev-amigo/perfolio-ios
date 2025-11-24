@@ -6,13 +6,13 @@ final class ERC20ContractTests: XCTestCase {
     // MARK: - Properties
     
     var sut: ERC20Contract!
-    var mockWeb3Client: MockWeb3ClientActor!
+    var mockWeb3Client: MockWeb3ClientForERC20Tests!
     
     // MARK: - Setup & Teardown
     
     override func setUp() {
         super.setUp()
-        mockWeb3Client = MockWeb3ClientActor()
+        mockWeb3Client = MockWeb3ClientForERC20Tests()
         sut = ERC20Contract(web3Client: mockWeb3Client)
     }
     
@@ -314,9 +314,9 @@ final class ERC20ContractTests: XCTestCase {
     }
 }
 
-// MARK: - Mock Web3Client Actor
+// MARK: - Mock Web3Client Actor (actors don't support inheritance, so using composition)
 
-actor MockWeb3ClientActor: Web3Client {
+actor MockWeb3ClientForERC20Tests {
     private var mockResult: String = "0x0"
     private var mockResults: [String] = []
     private var callCount = 0
@@ -337,7 +337,7 @@ actor MockWeb3ClientActor: Web3Client {
         shouldThrowError = shouldThrow
     }
     
-    override func ethCall(
+    func ethCall(
         to contractAddress: String,
         data: String,
         from: String? = nil,

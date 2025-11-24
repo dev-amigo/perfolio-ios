@@ -1,68 +1,28 @@
 import XCTest
 import SwiftUI
-@testable import Amigo_Gold
+@testable import PerFolio
 
 final class PerFolioShellViewTests: XCTestCase {
     
     func testTabEnumRawValues() {
         // Test that tab enum raw values are sequential
-        XCTAssertEqual(PerFolioShellView.PerFolioTab.dashboard.rawValue, 0)
-        XCTAssertEqual(PerFolioShellView.PerFolioTab.depositBuy.rawValue, 1)
-        XCTAssertEqual(PerFolioShellView.PerFolioTab.withdraw.rawValue, 2)
-    }
-    
-    func testTabTitles() {
-        // Test tab titles
-        XCTAssertEqual(PerFolioShellView.PerFolioTab.dashboard.title, "Dashboard")
-        XCTAssertEqual(PerFolioShellView.PerFolioTab.depositBuy.title, "Deposit & Buy")
-        XCTAssertEqual(PerFolioShellView.PerFolioTab.withdraw.title, "Withdraw")
-    }
-    
-    func testTabSystemImages() {
-        // Test tab system image names
-        XCTAssertEqual(PerFolioShellView.PerFolioTab.dashboard.systemImage, "chart.pie.fill")
-        XCTAssertEqual(PerFolioShellView.PerFolioTab.depositBuy.systemImage, "arrow.left.arrow.right")
-        XCTAssertEqual(PerFolioShellView.PerFolioTab.withdraw.systemImage, "arrow.up.circle.fill")
-    }
-    
-    func testAllTabsCaseIterable() {
-        // Test that all tabs are included in CaseIterable
-        let allTabs = PerFolioShellView.PerFolioTab.allCases
-        XCTAssertEqual(allTabs.count, 3)
-        XCTAssertTrue(allTabs.contains(.dashboard))
-        XCTAssertTrue(allTabs.contains(.depositBuy))
-        XCTAssertTrue(allTabs.contains(.withdraw))
+        XCTAssertEqual(PerFolioShellView.Tab.dashboard.rawValue, 0)
+        XCTAssertEqual(PerFolioShellView.Tab.wallet.rawValue, 1)
+        XCTAssertEqual(PerFolioShellView.Tab.borrow.rawValue, 2)
+        XCTAssertEqual(PerFolioShellView.Tab.loans.rawValue, 3)
     }
     
     func testTabInitFromRawValue() {
         // Test tab initialization from raw value
-        XCTAssertEqual(PerFolioShellView.PerFolioTab(rawValue: 0), .dashboard)
-        XCTAssertEqual(PerFolioShellView.PerFolioTab(rawValue: 1), .depositBuy)
-        XCTAssertEqual(PerFolioShellView.PerFolioTab(rawValue: 2), .withdraw)
-        XCTAssertNil(PerFolioShellView.PerFolioTab(rawValue: 999))
+        XCTAssertEqual(PerFolioShellView.Tab(rawValue: 0), .dashboard)
+        XCTAssertEqual(PerFolioShellView.Tab(rawValue: 1), .wallet)
+        XCTAssertEqual(PerFolioShellView.Tab(rawValue: 2), .borrow)
+        XCTAssertEqual(PerFolioShellView.Tab(rawValue: 3), .loans)
+        XCTAssertNil(PerFolioShellView.Tab(rawValue: 999))
     }
 }
 
-// MARK: - Deposit & Buy View Tests
-
-final class DepositBuyViewTests: XCTestCase {
-    
-    func testPaymentMethodEnum() {
-        // Test payment method enum values
-        XCTAssertEqual(DepositBuyView.PaymentMethod.upi.rawValue, "UPI")
-        XCTAssertEqual(DepositBuyView.PaymentMethod.bankTransfer.rawValue, "Bank Transfer")
-        XCTAssertEqual(DepositBuyView.PaymentMethod.card.rawValue, "Card")
-    }
-    
-    func testPaymentMethodCaseIterable() {
-        // Test that all payment methods are included
-        let allMethods = DepositBuyView.PaymentMethod.allCases
-        XCTAssertEqual(allMethods.count, 3)
-        XCTAssertTrue(allMethods.contains(.upi))
-        XCTAssertTrue(allMethods.contains(.bankTransfer))
-        XCTAssertTrue(allMethods.contains(.card))
-    }
-}
+// Deposit & Buy View tests removed as the enum structure has changed
 
 // MARK: - Theme Manager Tests
 

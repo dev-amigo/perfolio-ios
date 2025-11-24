@@ -203,18 +203,5 @@ final class ActiveLoansViewModelTests: XCTestCase {
     }
 }
 
-// MARK: - Mock Service
-
-class MockFluidPositionsService: FluidPositionsService {
-    var mockPositions: [BorrowPosition] = []
-    var shouldThrowError = false
-    var errorToThrow: Error?
-    
-    override func fetchPositions(for owner: String) async throws -> [BorrowPosition] {
-        if shouldThrowError {
-            throw errorToThrow ?? NSError(domain: "test", code: -1)
-        }
-        return mockPositions
-    }
-}
+// MARK: - Mock Service (moved to MockObjects.swift to avoid duplication)
 

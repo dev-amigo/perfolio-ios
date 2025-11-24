@@ -1,6 +1,6 @@
 import XCTest
 import SwiftUI
-@testable import Amigo_Gold
+@testable import PerFolio
 
 final class PerFolioThemeTests: XCTestCase {
     

@@ -21,7 +21,7 @@ final class ActiveLoansIntegrationTests: XCTestCase {
         XCTAssertEqual(mockVaultService.lastRepayAmount, payBackAmount)
     }
     
-    func testAddCollateral_ImproveHealth Factor() async throws {
+    func testAddCollateral_ImproveHealthFactor() async throws {
         // Given: Position with moderate health factor
         let initialPosition = BorrowPosition(
             id: "test-1",

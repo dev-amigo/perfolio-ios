@@ -6,7 +6,7 @@ import CryptoKit
 /// Core service for interacting with Fluid Protocol vaults
 /// Handles borrow execution, position management, and state tracking
 @MainActor
-final class FluidVaultService: ObservableObject {
+class FluidVaultService: ObservableObject {
     
     // MARK: - Published State
     

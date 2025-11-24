@@ -1,5 +1,5 @@
 import XCTest
-@testable import Amigo_Gold
+@testable import PerFolio
 
 final class PrivyTokenVerifierTests: XCTestCase {
     private var verifier: PrivyTokenVerifier!
