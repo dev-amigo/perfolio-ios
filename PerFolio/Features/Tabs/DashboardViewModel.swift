@@ -174,34 +174,34 @@ final class DashboardViewModel: ObservableObject {
     // MARK: - Statistics Computed Properties
     
     var totalCollateral: String {
-        let total = borrowPositions.reduce(Decimal(0)) { $0 + $1.collateralAmount }
+        let total = borrowPositions.reduce(into: Decimal(0)) { $0 += $1.collateralAmount }
         return formatDecimal(total, maxDecimals: 4) + " PAXG"
     }
     
     var totalCollateralUSD: String {
-        let total = borrowPositions.reduce(Decimal(0)) { $0 + $1.collateralValueUSD }
+        let total = borrowPositions.reduce(into: Decimal(0)) { $0 += $1.collateralValueUSD }
         return formatCurrency(total)
     }
     
     var totalBorrowed: String {
-        let total = borrowPositions.reduce(Decimal(0)) { $0 + $1.debtAmount }
+        let total = borrowPositions.reduce(into: Decimal(0)) { $0 += $1.debtAmount }
         return formatDecimal(total, maxDecimals: 2) + " USDT"
     }
     
     var totalBorrowedUSD: String {
-        let total = borrowPositions.reduce(Decimal(0)) { $0 + $1.debtValueUSD }
+        let total = borrowPositions.reduce(into: Decimal(0)) { $0 += $1.debtValueUSD }
         return formatCurrency(total)
     }
     
     var healthFactor: String {
         guard !borrowPositions.isEmpty else { return "N/A" }
-        let avgHealth = borrowPositions.reduce(Decimal(0)) { $0 + $1.healthFactor } / Decimal(borrowPositions.count)
+        let avgHealth = borrowPositions.reduce(into: Decimal(0)) { $0 += $1.healthFactor } / Decimal(borrowPositions.count)
         return formatDecimal(avgHealth, maxDecimals: 2)
     }
     
     var healthStatus: String {
         guard !borrowPositions.isEmpty else { return "No Loans" }
-        let avgHealth = borrowPositions.reduce(Decimal(0)) { $0 + $1.healthFactor } / Decimal(borrowPositions.count)
+        let avgHealth = borrowPositions.reduce(into: Decimal(0)) { $0 += $1.healthFactor } / Decimal(borrowPositions.count)
         if avgHealth >= 2.0 { return "Safe" }
         else if avgHealth >= 1.2 { return "Moderate" }
         else { return "At Risk" }
@@ -209,7 +209,7 @@ final class DashboardViewModel: ObservableObject {
     
     var healthStatusColor: Color {
         guard !borrowPositions.isEmpty else { return .gray }
-        let avgHealth = borrowPositions.reduce(Decimal(0)) { $0 + $1.healthFactor } / Decimal(borrowPositions.count)
+        let avgHealth = borrowPositions.reduce(into: Decimal(0)) { $0 += $1.healthFactor } / Decimal(borrowPositions.count)
         if avgHealth >= 2.0 { return .green }
         else if avgHealth >= 1.2 { return .orange }
         else { return .red }
