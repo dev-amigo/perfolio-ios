@@ -11,7 +11,9 @@ struct PerFolioDashboardView: View {
     
     // Check if user is fresh (no USDC and no PAXG)
     private var isFreshUser: Bool {
-        viewModel.usdcBalance == 0 && viewModel.paxgBalance == 0
+        let usdcAmount = viewModel.usdcBalance?.decimalBalance ?? 0
+        let paxgAmount = viewModel.paxgBalance?.decimalBalance ?? 0
+        return usdcAmount == 0 && paxgAmount == 0
     }
     
     var body: some View {
