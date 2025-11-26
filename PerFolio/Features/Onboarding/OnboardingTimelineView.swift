@@ -187,6 +187,6 @@ extension Color {
             }
         }
     }
-    .environmentObject(ThemeManager.shared)
+    .environmentObject(ThemeManager())
 }
 

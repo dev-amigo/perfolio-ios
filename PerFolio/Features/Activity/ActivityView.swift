@@ -209,6 +209,6 @@ struct ActivityView: View {
 // MARK: - Preview
 #Preview {
     ActivityView()
-        .environmentObject(ThemeManager.shared)
+        .environmentObject(ThemeManager())
 }
 

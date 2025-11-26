@@ -100,6 +100,6 @@ struct TimelineStepCard: View {
     }
     .padding()
     .background(Color.black)
-    .environmentObject(ThemeManager.shared)
+    .environmentObject(ThemeManager())
 }
 
