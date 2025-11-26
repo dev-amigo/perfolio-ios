@@ -30,8 +30,9 @@ struct OnboardingTimelineView: View {
                 .fill(
                     LinearGradient(
                         colors: [
-                            Color(hex: "4A90E2").opacity(0.9),
-                            Color(hex: "357ABD").opacity(0.9)
+                            themeManager.perfolioTheme.secondaryBackground,
+                            themeManager.perfolioTheme.secondaryBackground.opacity(0.95),
+                            Color(hex: "D4AF37").opacity(0.15) // Golden tint
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -40,7 +41,7 @@ struct OnboardingTimelineView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 20)
-                .stroke(Color.white.opacity(0.3), lineWidth: 2)
+                .stroke(Color(hex: "D4AF37").opacity(0.3), lineWidth: 1.5)
         )
         .shadow(color: .black.opacity(0.3), radius: 12, y: 6)
     }
@@ -49,26 +50,26 @@ struct OnboardingTimelineView: View {
     
     private var headerView: some View {
         HStack(spacing: 12) {
-            // Icon
+            // Icon with golden tint
             ZStack {
                 Circle()
-                    .fill(Color.white.opacity(0.2))
+                    .fill(Color(hex: "D4AF37").opacity(0.2))
                     .frame(width: 44, height: 44)
                 
                 Image(systemName: "star.circle.fill")
                     .font(.system(size: 24))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color(hex: "D4AF37"))
             }
             
             // Title and progress
             VStack(alignment: .leading, spacing: 4) {
                 Text("Get Started")
                     .font(.system(size: 20, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(themeManager.perfolioTheme.textPrimary)
                 
                 Text("\(onboardingViewModel.completedStepsCount) of \(onboardingViewModel.totalSteps) steps completed")
                     .font(.system(size: 13, weight: .medium, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.8))
+                    .foregroundStyle(themeManager.perfolioTheme.textSecondary)
             }
             
             Spacer()
@@ -78,26 +79,26 @@ struct OnboardingTimelineView: View {
                 // Progress circle
                 ZStack {
                     Circle()
-                        .stroke(Color.white.opacity(0.3), lineWidth: 3)
+                        .stroke(Color.gray.opacity(0.3), lineWidth: 3)
                         .frame(width: 32, height: 32)
                     
                     Circle()
                         .trim(from: 0, to: onboardingViewModel.progressPercentage)
-                        .stroke(Color.white, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                        .stroke(Color(hex: "D4AF37"), style: StrokeStyle(lineWidth: 3, lineCap: .round))
                         .frame(width: 32, height: 32)
                         .rotationEffect(.degrees(-90))
                     
                     if onboardingViewModel.allStepsCompleted {
                         Image(systemName: "checkmark")
                             .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(themeManager.perfolioTheme.success)
                     }
                 }
                 
                 // Expand/collapse chevron
                 Image(systemName: onboardingViewModel.isExpanded ? "chevron.up" : "chevron.down")
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(themeManager.perfolioTheme.textSecondary)
                     .rotationEffect(.degrees(onboardingViewModel.isExpanded ? 0 : 180))
             }
         }
@@ -107,25 +108,39 @@ struct OnboardingTimelineView: View {
     // MARK: - Timeline Content
     
     private var timelineContent: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 0) {
             // Divider
             Rectangle()
-                .fill(Color.white.opacity(0.2))
+                .fill(Color(hex: "D4AF37").opacity(0.2))
                 .frame(height: 1)
                 .padding(.horizontal, 16)
+                .padding(.top, 8)
             
-            // Steps
-            VStack(spacing: 12) {
-                ForEach(onboardingViewModel.getSteps(navigationHandler: handleNavigation), id: \.number) { step in
+            // Steps with arrow separators
+            VStack(spacing: 0) {
+                ForEach(Array(onboardingViewModel.getSteps(navigationHandler: handleNavigation).enumerated()), id: \.element.id) { index, step in
                     TimelineStepCard(
-                        stepNumber: step.number,
                         title: step.title,
                         description: step.description,
                         actionTitle: step.actionTitle,
                         isCompleted: step.isCompleted,
+                        stepColor: step.color,
+                        stepIcon: step.icon,
                         action: step.action
                     )
                     .environmentObject(themeManager)
+                    
+                    // Arrow separator (except after last step)
+                    if index < onboardingViewModel.totalSteps - 1 {
+                        HStack {
+                            Spacer()
+                            Image(systemName: "arrow.down")
+                                .font(.system(size: 14, weight: .regular))
+                                .foregroundStyle(Color.gray.opacity(0.3))
+                            Spacer()
+                        }
+                        .padding(.vertical, 4)
+                    }
                 }
             }
             .padding(16)

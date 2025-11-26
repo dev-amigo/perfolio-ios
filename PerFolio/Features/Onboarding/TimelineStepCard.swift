@@ -1,77 +1,69 @@
 import SwiftUI
 
-/// Individual timeline step card with completion status and action button
+/// Individual timeline step - compact design with colored icons
 struct TimelineStepCard: View {
-    let stepNumber: Int
     let title: String
     let description: String
     let actionTitle: String
     let isCompleted: Bool
+    let stepColor: Color
+    let stepIcon: String
     let action: () -> Void
     
     @EnvironmentObject var themeManager: ThemeManager
     
     var body: some View {
-        HStack(alignment: .top, spacing: 16) {
-            // Step indicator
-            ZStack {
-                Circle()
-                    .fill(isCompleted ? themeManager.perfolioTheme.success : themeManager.perfolioTheme.secondaryBackground)
-                    .frame(width: 40, height: 40)
-                
-                if isCompleted {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundStyle(.white)
-                } else {
-                    Text("\(stepNumber)")
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
-                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
-                }
-            }
+        HStack(alignment: .top, spacing: 12) {
+            // Checkmark - gray when incomplete, green when completed
+            Image(systemName: isCompleted ? "checkmark.circle.fill" : "checkmark.circle")
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(isCompleted ? themeManager.perfolioTheme.success : Color.gray.opacity(0.4))
             
-            // Content
-            VStack(alignment: .leading, spacing: 12) {
-                // Title
-                Text(title)
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
-                    .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+            VStack(alignment: .leading, spacing: 6) {
+                // Title with colored icon
+                HStack(spacing: 8) {
+                    Image(systemName: stepIcon)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(stepColor)
+                    
+                    Text(title)
+                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                    
+                    Spacer()
+                }
                 
                 // Description
                 Text(description)
-                    .font(.system(size: 14, weight: .regular, design: .rounded))
+                    .font(.system(size: 13, weight: .regular, design: .rounded))
                     .foregroundStyle(themeManager.perfolioTheme.textSecondary)
-                    .lineSpacing(4)
+                    .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
                 
-                // Action button
-                if !isCompleted {
-                    Button {
-                        HapticManager.shared.light()
-                        action()
-                    } label: {
-                        HStack(spacing: 6) {
-                            Text(actionTitle)
-                                .font(.system(size: 14, weight: .semibold, design: .rounded))
-                            Image(systemName: "arrow.right")
-                                .font(.system(size: 12, weight: .semibold))
-                        }
-                        .foregroundStyle(themeManager.perfolioTheme.tintColor)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(themeManager.perfolioTheme.tintColor.opacity(0.15))
-                        )
+                // Action button (always show for easy navigation)
+                Button {
+                    HapticManager.shared.light()
+                    action()
+                } label: {
+                    HStack(spacing: 6) {
+                        Text(actionTitle)
+                            .font(.system(size: 14, weight: .medium, design: .rounded))
+                        Image(systemName: "arrow.right")
+                            .font(.system(size: 11, weight: .semibold))
                     }
+                    .foregroundStyle(stepColor)
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(stepColor.opacity(0.12))
+                    )
                 }
+                .padding(.top, 2)
             }
         }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(themeManager.perfolioTheme.secondaryBackground)
-        )
-        .opacity(isCompleted ? 0.7 : 1.0)
+        .padding(.vertical, 12)
+        .opacity(isCompleted ? 0.6 : 1.0)
     }
 }
 

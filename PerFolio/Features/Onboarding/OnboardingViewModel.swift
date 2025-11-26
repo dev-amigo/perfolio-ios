@@ -103,58 +103,65 @@ final class OnboardingViewModel: ObservableObject {
     
     // MARK: - Step Definitions
     
-    struct TimelineStep {
-        let number: Int
+    struct TimelineStep: Identifiable {
+        let id = UUID()
         let title: String
         let description: String
         let actionTitle: String
         let isCompleted: Bool
+        let color: Color
+        let icon: String
         let action: () -> Void
     }
     
     func getSteps(navigationHandler: @escaping (String) -> Void) -> [TimelineStep] {
         [
             TimelineStep(
-                number: 1,
                 title: "Deposit USDC",
                 description: "Buy USDC with INR using UPI or card via OnMeta. Instant deposit to your wallet.",
                 actionTitle: "Go to Deposit",
                 isCompleted: self.hasDepositedUSDC,
+                color: Color.green,
+                icon: "arrow.down.circle.fill",
                 action: { navigationHandler("wallet") }
             ),
             TimelineStep(
-                number: 2,
                 title: "Swap to PAXG",
                 description: "Convert USDC to PAXG (tokenized gold) at best rates via DEX aggregator.",
                 actionTitle: "Go to Swap",
                 isCompleted: self.hasSwappedToPAXG,
+                color: Color.blue,
+                icon: "arrow.left.arrow.right.circle.fill",
                 action: { navigationHandler("wallet") }
             ),
             TimelineStep(
-                number: 3,
                 title: "Borrow USDC",
                 description: "Use PAXG as collateral to borrow USDC instantly via Fluid Protocol at low interest rates.",
                 actionTitle: "Go to Borrow",
                 isCompleted: self.hasBorrowed,
+                color: Color.yellow,
+                icon: "banknote.fill",
                 action: { navigationHandler("borrow") }
             ),
             TimelineStep(
-                number: 4,
                 title: "Manage Active Loans",
                 description: "View and manage your active loans. Repay debt, add collateral, or withdraw excess collateral.",
                 actionTitle: "View Loans",
                 isCompleted: self.hasVisitedLoans,
+                color: Color(hex: "D4AF37"), // Golden
+                icon: "list.bullet.rectangle.fill",
                 action: { [weak self] in
                     navigationHandler("loans")
                     self?.markLoansVisited()
                 }
             ),
             TimelineStep(
-                number: 5,
                 title: "Withdraw to Bank",
                 description: "Convert USDC back to INR and withdraw directly to your bank account via Transak.",
                 actionTitle: "Go to Withdraw",
                 isCompleted: self.hasWithdrawn,
+                color: Color.green,
+                icon: "arrow.up.circle.fill",
                 action: { navigationHandler("wallet") }
             )
         ]
