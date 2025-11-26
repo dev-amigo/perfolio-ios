@@ -131,7 +131,7 @@ struct OnboardingTimelineView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
             
-            // Steps with arrow separators and tutorial tips
+            // Steps with arrow separators and manual info tips only
             VStack(spacing: 0) {
                 ForEach(Array(onboardingViewModel.getSteps(navigationHandler: handleNavigation).enumerated()), id: \.element.id) { index, step in
                     TimelineStepCard(
@@ -141,7 +141,7 @@ struct OnboardingTimelineView: View {
                         isCompleted: step.isCompleted,
                         stepColor: step.color,
                         stepIcon: step.icon,
-                        tip: onboardingViewModel.isTutorialComplete ? nil : getTipForStep(index),
+                        tip: nil, // Disabled automatic tutorial tips
                         manualTip: getManualTipForStep(index),
                         onTipAction: { actionId in
                             handleTipAction(actionId, stepIndex: index)
@@ -215,15 +215,15 @@ struct OnboardingTimelineView: View {
         Task { @MainActor in
             switch stepIndex {
             case 0:
-                depositInfoTip.invalidate(reason: .tipClosed)
+                await depositInfoTip.resetEligibility()
             case 1:
-                swapInfoTip.invalidate(reason: .tipClosed)
+                await swapInfoTip.resetEligibility()
             case 2:
-                borrowInfoTip.invalidate(reason: .tipClosed)
+                await borrowInfoTip.resetEligibility()
             case 3:
-                loansInfoTip.invalidate(reason: .tipClosed)
+                await loansInfoTip.resetEligibility()
             case 4:
-                withdrawInfoTip.invalidate(reason: .tipClosed)
+                await withdrawInfoTip.resetEligibility()
             default:
                 break
             }

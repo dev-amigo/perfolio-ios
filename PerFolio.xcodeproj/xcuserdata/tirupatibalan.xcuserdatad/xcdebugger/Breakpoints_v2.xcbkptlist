@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Bucket
+   uuid = "06ADAB90-28C5-4B0A-AC26-8B93A58B3B62"
+   type = "1"
+   version = "2.0">
+   <Breakpoints>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "96165567-C32C-4C18-823B-69EAD1777758"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "PerFolio/Features/Onboarding/OnboardingTimelineView.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "212"
+            endingLineNumber = "212"
+            landmarkName = "handleInfoTap(stepIndex:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "B1878805-22C8-460C-8BFD-6AD02F5ADFCC"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "PerFolio/Features/Onboarding/OnboardingTimelineView.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "217"
+            endingLineNumber = "217"
+            landmarkName = "handleInfoTap(stepIndex:)"
+            landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "B1878805-22C8-460C-8BFD-6AD02F5ADFCC - b4a02d7afdfa60cb"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(1) suspend resume partial function for closure #1 () async -&gt; () in PerFolio.OnboardingTimelineView.handleInfoTap(stepIndex: Swift.Int) -&gt; ()"
+                  moduleName = "PerFolio.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/tirupatibalan/Documents/Transak/PerFolio%20iOS/PerFolio/Features/Onboarding/OnboardingTimelineView.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "218"
+                  endingLineNumber = "218">
+               </Location>
+               <Location
+                  uuid = "B1878805-22C8-460C-8BFD-6AD02F5ADFCC - 958d0861bb4312ea"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(2) await resume partial function for closure #1 () async -&gt; () in PerFolio.OnboardingTimelineView.handleInfoTap(stepIndex: Swift.Int) -&gt; ()"
+                  moduleName = "PerFolio.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/tirupatibalan/Documents/Transak/PerFolio%20iOS/PerFolio/Features/Onboarding/OnboardingTimelineView.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "218"
+                  endingLineNumber = "218">
+               </Location>
+               <Location
+                  uuid = "B1878805-22C8-460C-8BFD-6AD02F5ADFCC - 1d0e702df4a2ab01"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(3) suspend resume partial function for closure #1 () async -&gt; () in PerFolio.OnboardingTimelineView.handleInfoTap(stepIndex: Swift.Int) -&gt; ()"
+                  moduleName = "PerFolio.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/tirupatibalan/Documents/Transak/PerFolio%20iOS/PerFolio/Features/Onboarding/OnboardingTimelineView.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "230"
+                  endingLineNumber = "230">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "A6CBE8A9-BA69-4145-BCD5-F21D72E40F58"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "PerFolio/Features/Onboarding/OnboardingTimelineView.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "226"
+            endingLineNumber = "226"
+            landmarkName = "handleInfoTap(stepIndex:)"
+            landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "A6CBE8A9-BA69-4145-BCD5-F21D72E40F58 - b4a02d7afdfa6ff3"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(1) suspend resume partial function for closure #1 () async -&gt; () in PerFolio.OnboardingTimelineView.handleInfoTap(stepIndex: Swift.Int) -&gt; ()"
+                  moduleName = "PerFolio.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/tirupatibalan/Documents/Transak/PerFolio%20iOS/PerFolio/Features/Onboarding/OnboardingTimelineView.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "226"
+                  endingLineNumber = "226">
+               </Location>
+               <Location
+                  uuid = "A6CBE8A9-BA69-4145-BCD5-F21D72E40F58 - dd361b5072b18c27"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(10) await resume partial function for closure #1 () async -&gt; () in PerFolio.OnboardingTimelineView.handleInfoTap(stepIndex: Swift.Int) -&gt; ()"
+                  moduleName = "PerFolio.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/tirupatibalan/Documents/Transak/PerFolio%20iOS/PerFolio/Features/Onboarding/OnboardingTimelineView.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "226"
+                  endingLineNumber = "226">
+               </Location>
+               <Location
+                  uuid = "A6CBE8A9-BA69-4145-BCD5-F21D72E40F58 - 91c2aaa3b342c5b0"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(11) suspend resume partial function for closure #1 () async -&gt; () in PerFolio.OnboardingTimelineView.handleInfoTap(stepIndex: Swift.Int) -&gt; ()"
+                  moduleName = "PerFolio.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/tirupatibalan/Documents/Transak/PerFolio%20iOS/PerFolio/Features/Onboarding/OnboardingTimelineView.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "230"
+                  endingLineNumber = "230">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+   </Breakpoints>
+</Bucket>
