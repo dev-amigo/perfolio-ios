@@ -16,6 +16,7 @@ struct TimelineStepCard: View {
     let action: () -> Void
     
     @EnvironmentObject var themeManager: ThemeManager
+    @State private var showManualTip = false
     
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -75,13 +76,19 @@ struct TimelineStepCard: View {
                     if manualTip != nil {
                         Button {
                             HapticManager.shared.light()
+                            showManualTip = true
                             onInfoTap?()
                         } label: {
                             Image(systemName: "info.circle.fill")
                                 .font(.system(size: 18, weight: .medium))
                                 .foregroundStyle(themeManager.perfolioTheme.textSecondary.opacity(0.6))
                         }
-                        .popoverTip(manualTip!, arrowEdge: .top)
+                        .popover(isPresented: $showManualTip, arrowEdge: .top) {
+                            if let tip = manualTip {
+                                TipView(tip)
+                                    .presentationCompactAdaptation(.popover)
+                            }
+                        }
                     }
                 }
                 .padding(.top, 2)

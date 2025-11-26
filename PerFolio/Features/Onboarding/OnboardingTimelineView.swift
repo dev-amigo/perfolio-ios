@@ -210,51 +210,9 @@ struct OnboardingTimelineView: View {
     
     private func handleInfoTap(stepIndex: Int) {
         HapticManager.shared.light()
-        
-        // Always show tip when info button is tapped
-        Task { @MainActor in
-            switch stepIndex {
-            case 0:
-                // Invalidate any existing tip first
-                depositInfoTip.invalidate(reason: .tipClosed)
-                
-                // Reset parameter and wait
-                DepositInfoTip.shouldShow = false
-                try? await Task.sleep(nanoseconds: 100_000_000)
-                
-                // Show tip
-                DepositInfoTip.shouldShow = true
-                
-            case 1:
-                swapInfoTip.invalidate(reason: .tipClosed)
-                SwapInfoTip.shouldShow = false
-                try? await Task.sleep(nanoseconds: 100_000_000)
-                SwapInfoTip.shouldShow = true
-                
-            case 2:
-                borrowInfoTip.invalidate(reason: .tipClosed)
-                BorrowInfoTip.shouldShow = false
-                try? await Task.sleep(nanoseconds: 100_000_000)
-                BorrowInfoTip.shouldShow = true
-                
-            case 3:
-                loansInfoTip.invalidate(reason: .tipClosed)
-                LoansInfoTip.shouldShow = false
-                try? await Task.sleep(nanoseconds: 100_000_000)
-                LoansInfoTip.shouldShow = true
-                
-            case 4:
-                withdrawInfoTip.invalidate(reason: .tipClosed)
-                WithdrawInfoTip.shouldShow = false
-                try? await Task.sleep(nanoseconds: 100_000_000)
-                WithdrawInfoTip.shouldShow = true
-                
-            default:
-                break
-            }
-        }
-        
-        AppLogger.log("ℹ️ Manual info tip shown for step \(stepIndex)", category: "onboarding")
+        AppLogger.log("ℹ️ Info button tapped for step \(stepIndex)", category: "onboarding")
+        // Note: Tips will show automatically via .popoverTip() modifier
+        // No manual triggering needed - TipKit handles it
     }
     
     private func handleTipAction(_ actionId: String, stepIndex: Int) {
