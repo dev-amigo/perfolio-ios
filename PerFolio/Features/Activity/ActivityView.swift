@@ -207,8 +207,6 @@ struct ActivityView: View {
 }
 
 // MARK: - Preview
-#Preview {
-    ActivityView()
-        .environmentObject(ThemeManager())
-}
+// Preview temporarily disabled due to Swift 6 Preview macro conflicts
+// Uncomment when project migrates to Swift 6 or preview issues are resolved
 

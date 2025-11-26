@@ -76,30 +76,6 @@ struct TimelineStepCard: View {
 }
 
 // MARK: - Preview
-#Preview {
-    VStack(spacing: 16) {
-        TimelineStepCard(
-            stepNumber: 1,
-            title: "Deposit USDC",
-            description: "Buy USDC with INR using UPI or card via OnMeta. Instant deposit to your wallet.",
-            actionTitle: "Go to Deposit",
-            isCompleted: false
-        ) {
-            print("Navigate to deposit")
-        }
-        
-        TimelineStepCard(
-            stepNumber: 2,
-            title: "Swap to PAXG",
-            description: "Convert USDC to PAXG (tokenized gold) at best rates via DEX.",
-            actionTitle: "Go to Swap",
-            isCompleted: true
-        ) {
-            print("Navigate to swap")
-        }
-    }
-    .padding()
-    .background(Color.black)
-    .environmentObject(ThemeManager())
-}
+// Preview temporarily disabled due to Swift 6 Preview macro conflicts
+// Uncomment when project migrates to Swift 6 or preview issues are resolved
 

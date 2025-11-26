@@ -177,16 +177,6 @@ extension Color {
 }
 
 // MARK: - Preview
-#Preview {
-    ZStack {
-        Color.black.ignoresSafeArea()
-        
-        ScrollView {
-            OnboardingTimelineView { destination in
-                print("Navigate to: \(destination)")
-            }
-        }
-    }
-    .environmentObject(ThemeManager())
-}
+// Preview temporarily disabled due to Swift 6 Preview macro conflicts
+// Uncomment when project migrates to Swift 6 or preview issues are resolved
 

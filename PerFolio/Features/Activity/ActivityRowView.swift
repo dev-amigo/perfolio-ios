@@ -75,34 +75,6 @@ struct ActivityRowView: View {
 }
 
 // MARK: - Preview
-#Preview {
-    VStack(spacing: 12) {
-        ActivityRowView(activity: UserActivity(
-            type: .deposit,
-            amount: 6.35,
-            tokenSymbol: "USDC",
-            activityDescription: "Deposited ₹600 via OnMeta"
-        ))
-        
-        ActivityRowView(activity: UserActivity(
-            type: .swap,
-            amount: 0.001,
-            tokenSymbol: "PAXG",
-            activityDescription: "Swapped 6.35 USDC to 0.001 PAXG",
-            fromToken: "USDC",
-            toToken: "PAXG"
-        ))
-        
-        ActivityRowView(activity: UserActivity(
-            type: .borrow,
-            amount: 1.5,
-            tokenSymbol: "USDC",
-            status: .pending,
-            activityDescription: "Borrowed 1.5 USDC with 0.001 PAXG collateral"
-        ))
-    }
-    .padding()
-    .background(Color.black)
-    .environmentObject(ThemeManager())
-}
+// Preview temporarily disabled due to Swift 6 Preview macro conflicts
+// Uncomment when project migrates to Swift 6 or preview issues are resolved
 
