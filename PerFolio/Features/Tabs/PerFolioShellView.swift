@@ -10,6 +10,7 @@ struct PerFolioShellView: View {
         case wallet = 1
         case borrow = 2
         case loans = 3
+        case activity = 4
     }
     
     var body: some View {
@@ -48,6 +49,12 @@ struct PerFolioShellView: View {
                         Label("Loans", systemImage: "list.bullet.rectangle")
                     }
                     .tag(Tab.loans)
+                
+                ActivityView()
+                    .tabItem {
+                        Label("Activity", systemImage: "clock.arrow.circlepath")
+                    }
+                    .tag(Tab.activity)
             }
             .tint(themeManager.perfolioTheme.tintColor)
         }
