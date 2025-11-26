@@ -189,40 +189,65 @@ struct OnboardingTimelineView: View {
     private func handleTipAction(_ actionId: String, stepIndex: Int) {
         HapticManager.shared.medium()
         
+        AppLogger.log("🔔 Tip action: \(actionId) at step \(stepIndex)", category: "onboarding")
+        
         switch stepIndex {
         case 0: // Deposit tip
             if actionId == "next" {
-                depositTip.invalidate(reason: .actionPerformed)
-                SwapToPAXGTip.hasSeenDepositTip = true
-                AppLogger.log("✅ Deposit tip completed, showing swap tip", category: "onboarding")
+                Task { @MainActor in
+                    depositTip.invalidate(reason: .actionPerformed)
+                    
+                    // Small delay to ensure invalidation completes
+                    try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+                    
+                    SwapToPAXGTip.hasSeenDepositTip = true
+                    AppLogger.log("✅ Deposit tip completed, swap tip should appear now", category: "onboarding")
+                }
             }
             
         case 1: // Swap tip
             if actionId == "next" {
-                swapTip.invalidate(reason: .actionPerformed)
-                BorrowUSDCTip.hasSeenSwapTip = true
-                AppLogger.log("✅ Swap tip completed, showing borrow tip", category: "onboarding")
+                Task { @MainActor in
+                    swapTip.invalidate(reason: .actionPerformed)
+                    
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                    
+                    BorrowUSDCTip.hasSeenSwapTip = true
+                    AppLogger.log("✅ Swap tip completed, borrow tip should appear now", category: "onboarding")
+                }
             }
             
         case 2: // Borrow tip
             if actionId == "next" {
-                borrowTip.invalidate(reason: .actionPerformed)
-                ManageLoansTip.hasSeenBorrowTip = true
-                AppLogger.log("✅ Borrow tip completed, showing loans tip", category: "onboarding")
+                Task { @MainActor in
+                    borrowTip.invalidate(reason: .actionPerformed)
+                    
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                    
+                    ManageLoansTip.hasSeenBorrowTip = true
+                    AppLogger.log("✅ Borrow tip completed, loans tip should appear now", category: "onboarding")
+                }
             }
             
         case 3: // Loans tip
             if actionId == "next" {
-                loansTip.invalidate(reason: .actionPerformed)
-                WithdrawBankTip.hasSeenLoansTip = true
-                AppLogger.log("✅ Loans tip completed, showing withdraw tip", category: "onboarding")
+                Task { @MainActor in
+                    loansTip.invalidate(reason: .actionPerformed)
+                    
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                    
+                    WithdrawBankTip.hasSeenLoansTip = true
+                    AppLogger.log("✅ Loans tip completed, withdraw tip should appear now", category: "onboarding")
+                }
             }
             
         case 4: // Withdraw tip (last one)
             if actionId == "finish" {
-                withdrawTip.invalidate(reason: .actionPerformed)
-                onboardingViewModel.completeTutorial()
-                AppLogger.log("🎉 Tutorial finished!", category: "onboarding")
+                Task { @MainActor in
+                    withdrawTip.invalidate(reason: .actionPerformed)
+                    onboardingViewModel.completeTutorial()
+                    AppLogger.log("🎉 Tutorial finished!", category: "onboarding")
+                }
             }
             
         default:

@@ -17,6 +17,12 @@ struct DepositUSDCTip: Tip {
         Image(systemName: "dollarsign.circle.fill")
     }
     
+    var options: [TipOption] {
+        [
+            Tips.MaxDisplayCount(1)
+        ]
+    }
+    
     var actions: [Action] {
         [
             Action(id: "next", title: "Next →")
@@ -43,7 +49,15 @@ struct SwapToPAXGTip: Tip {
     
     var rules: [Rule] {
         [
-            #Rule(Self.$hasSeenDepositTip) { $0 == true }
+            #Rule(Self.$hasSeenDepositTip) {
+                $0 == true
+            }
+        ]
+    }
+    
+    var options: [TipOption] {
+        [
+            Tips.MaxDisplayCount(1)
         ]
     }
     
@@ -73,7 +87,15 @@ struct BorrowUSDCTip: Tip {
     
     var rules: [Rule] {
         [
-            #Rule(Self.$hasSeenSwapTip) { $0 == true }
+            #Rule(Self.$hasSeenSwapTip) {
+                $0 == true
+            }
+        ]
+    }
+    
+    var options: [TipOption] {
+        [
+            Tips.MaxDisplayCount(1)
         ]
     }
     
@@ -103,7 +125,15 @@ struct ManageLoansTip: Tip {
     
     var rules: [Rule] {
         [
-            #Rule(Self.$hasSeenBorrowTip) { $0 == true }
+            #Rule(Self.$hasSeenBorrowTip) {
+                $0 == true
+            }
+        ]
+    }
+    
+    var options: [TipOption] {
+        [
+            Tips.MaxDisplayCount(1)
         ]
     }
     
@@ -133,7 +163,15 @@ struct WithdrawBankTip: Tip {
     
     var rules: [Rule] {
         [
-            #Rule(Self.$hasSeenLoansTip) { $0 == true }
+            #Rule(Self.$hasSeenLoansTip) {
+                $0 == true
+            }
+        ]
+    }
+    
+    var options: [TipOption] {
+        [
+            Tips.MaxDisplayCount(1)
         ]
     }
     

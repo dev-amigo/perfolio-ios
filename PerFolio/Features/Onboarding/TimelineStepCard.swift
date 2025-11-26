@@ -64,7 +64,7 @@ struct TimelineStepCard: View {
                 }
                 .padding(.top, 2)
                 .if(tip != nil) { view in
-                    view.popoverTip(tip!, arrowEdge: .bottom) { action in
+                    view.popoverTip(tip!, arrowEdge: .top) { action in
                         onTipAction?(action.id)
                     }
                 }
