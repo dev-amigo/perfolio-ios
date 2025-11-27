@@ -350,7 +350,7 @@ final class DashboardViewModel: ObservableObject {
     }
     
     var paxgCurrentPrice: String {
-        return formatCurrency(currentPAXGPrice)
+        return convertAndFormat(usdAmount: currentPAXGPrice)
     }
     
     var activePositions: String {
