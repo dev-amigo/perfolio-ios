@@ -20,6 +20,8 @@ struct Currency: Identifiable, Codable, Equatable, Hashable {
     }
     
     /// Default popular currencies (top 20 most used globally)
+    /// Conversion rates are INITIAL VALUES and get updated via CoinGecko API
+    /// Rates are approximate as of Nov 2025 (1 USD = X currency)
     static let popularCurrencies: [Currency] = [
         Currency(id: "INR", name: "Indian Rupee", symbol: "₹", flag: "🇮🇳", conversionRate: 83.50, region: .asia, isPopular: true),
         Currency(id: "USD", name: "US Dollar", symbol: "$", flag: "🇺🇸", conversionRate: 1.0, region: .americas, isPopular: true),

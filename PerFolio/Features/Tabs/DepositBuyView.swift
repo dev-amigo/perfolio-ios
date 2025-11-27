@@ -60,6 +60,15 @@ struct DepositBuyView: View {
         } message: {
             Text(viewModel.errorMessage)
         }
+        .onReceive(NotificationCenter.default.publisher(for: .currencyDidChange)) { notification in
+            // Automatically refresh when currency changes in Settings
+            if let newCurrency = notification.userInfo?["newCurrency"] as? String {
+                AppLogger.log("💱 Wallet View received currency change to: \(newCurrency)", category: "depositbuy")
+                Task {
+                    await viewModel.updateCurrencyConversions()
+                }
+            }
+        }
     }
     
     // MARK: - Header
@@ -233,10 +242,18 @@ struct DepositBuyView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     
-                    Text("≈ \(quote.displayInrAmount)")
-                        .font(.system(size: 16, weight: .medium, design: .rounded))
-                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    // Show converted amount in user's currency if available
+                    if let convertedQuote = viewModel.quoteInUserCurrency {
+                        Text("≈ \(convertedQuote.displayAmount)")
+                            .font(.system(size: 16, weight: .medium, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    } else {
+                        Text("≈ \(quote.displayInrAmount)")
+                            .font(.system(size: 16, weight: .medium, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
                 .padding(16)
                 .background(themeManager.perfolioTheme.buttonBackground.opacity(0.1))
@@ -247,9 +264,16 @@ struct DepositBuyView: View {
                 
                 // Quote details
                 VStack(spacing: 12) {
-                    simpleQuoteRow(label: "Exchange Rate", value: quote.displayRate, icon: "chart.line.uptrend.xyaxis")
-                    simpleQuoteRow(label: "Provider Fee", value: quote.displayFee, icon: "creditcard")
-                    simpleQuoteRow(label: "You Pay", value: quote.displayInrAmount, icon: "dollarsign.circle.fill")
+                    // Show rates in user's currency if available
+                    if let convertedQuote = viewModel.quoteInUserCurrency {
+                        simpleQuoteRow(label: "Exchange Rate", value: convertedQuote.displayRate, icon: "chart.line.uptrend.xyaxis")
+                        simpleQuoteRow(label: "Provider Fee", value: convertedQuote.displayFee, icon: "creditcard")
+                        simpleQuoteRow(label: "You Pay", value: convertedQuote.displayAmount, icon: "dollarsign.circle.fill")
+                    } else {
+                        simpleQuoteRow(label: "Exchange Rate", value: quote.displayRate, icon: "chart.line.uptrend.xyaxis")
+                        simpleQuoteRow(label: "Provider Fee", value: quote.displayFee, icon: "creditcard")
+                        simpleQuoteRow(label: "You Pay", value: quote.displayInrAmount, icon: "dollarsign.circle.fill")
+                    }
                 }
                 
                 // Estimated time
@@ -607,8 +631,16 @@ struct DepositBuyView: View {
                 
                 // Balances row
                 HStack(spacing: 16) {
-                    balanceItem(symbol: "USDC", balance: viewModel.formattedUSDCBalance)
-                    balanceItem(symbol: "PAXG", balance: viewModel.formattedPAXGBalance)
+                    balanceItem(
+                        symbol: "USDC",
+                        balance: viewModel.formattedUSDCBalance,
+                        valueInCurrency: viewModel.formatCurrency(viewModel.usdcValueInUserCurrency)
+                    )
+                    balanceItem(
+                        symbol: "PAXG",
+                        balance: viewModel.formattedPAXGBalance,
+                        valueInCurrency: viewModel.formatCurrency(viewModel.paxgValueInUserCurrency)
+                    )
                 }
                 
                 // Gold price display
@@ -653,14 +685,29 @@ struct DepositBuyView: View {
                 
                 // Estimated PAXG output
                 if !viewModel.usdcAmount.isEmpty, viewModel.goldPrice > 0 {
-                    HStack {
-                        Text("You will receive")
-                            .font(.system(size: 14, weight: .medium, design: .rounded))
-                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
-                        Spacer()
-                        Text("~\(viewModel.estimatedPAXGAmount) PAXG")
-                            .font(.system(size: 16, weight: .bold, design: .rounded))
-                            .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                    VStack(spacing: 6) {
+                        HStack {
+                            Text("You will receive")
+                                .font(.system(size: 14, weight: .medium, design: .rounded))
+                                .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                            Spacer()
+                            Text("~\(viewModel.estimatedPAXGAmount) PAXG")
+                                .font(.system(size: 16, weight: .bold, design: .rounded))
+                                .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                        }
+                        
+                        // Show value in user's currency
+                        if viewModel.estimatedPAXGInUserCurrency > 0 {
+                            HStack {
+                                Text("Value in \(viewModel.userCurrency)")
+                                    .font(.system(size: 12, weight: .regular, design: .rounded))
+                                    .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                                Spacer()
+                                Text("≈ \(viewModel.formatCurrency(viewModel.estimatedPAXGInUserCurrency))")
+                                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                                    .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                            }
+                        }
                     }
                     .padding(12)
                     .background(themeManager.perfolioTheme.goldenBoxGradient.opacity(0.1))
@@ -691,7 +738,7 @@ struct DepositBuyView: View {
         }
     }
     
-    private func balanceItem(symbol: String, balance: String) -> some View {
+    private func balanceItem(symbol: String, balance: String, valueInCurrency: String? = nil) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(symbol)
                 .font(.system(size: 12, weight: .medium, design: .rounded))
@@ -699,6 +746,13 @@ struct DepositBuyView: View {
             Text(balance)
                 .font(.system(size: 16, weight: .bold, design: .rounded))
                 .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+            
+            // Show value in user's currency
+            if let valueInCurrency = valueInCurrency, !valueInCurrency.isEmpty, valueInCurrency != "0" {
+                Text("≈ \(valueInCurrency)")
+                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .foregroundStyle(themeManager.perfolioTheme.textTertiary)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
@@ -801,7 +855,7 @@ struct DepositBuyView: View {
                     .foregroundStyle(themeManager.perfolioTheme.textPrimary)
                 
                 VStack(alignment: .leading, spacing: 12) {
-                    stepRow(number: "1", title: "Buy USDC", description: "Purchase USDC using INR via UPI or bank transfer")
+                    stepRow(number: "1", title: "Buy USDC", description: "Purchase USDC using \(viewModel.selectedFiatCurrency.rawValue) via UPI or bank transfer")
                     stepRow(number: "2", title: "Swap for PAXG", description: "Convert USDC to tokenized gold (PAXG)")
                     stepRow(number: "3", title: "Use as Collateral", description: "Borrow against your gold holdings")
                 }

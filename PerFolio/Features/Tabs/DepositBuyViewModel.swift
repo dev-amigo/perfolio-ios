@@ -39,6 +39,33 @@ final class DepositBuyViewModel: ObservableObject {
         case error(String)
     }
     
+    /// Quote converted to user's preferred currency for display
+    struct QuoteInUserCurrency {
+        let fiatAmount: Decimal          // Amount in user's currency
+        let usdcAmount: Decimal          // USDC you'll receive
+        let providerFee: Decimal         // Fee in user's currency
+        let exchangeRate: Decimal        // 1 USDC = X user currency
+        let currencyCode: String         // e.g., "EUR", "USD"
+        let currencySymbol: String       // e.g., "€", "$"
+        let estimatedTime: String
+        
+        var displayAmount: String {
+            currencySymbol + CurrencyFormatter.formatDecimal(fiatAmount)
+        }
+        
+        var displayUsdcAmount: String {
+            CurrencyFormatter.formatDecimal(usdcAmount)
+        }
+        
+        var displayFee: String {
+            currencySymbol + CurrencyFormatter.formatDecimal(providerFee)
+        }
+        
+        var displayRate: String {
+            "1 USDC = \(currencySymbol)\(CurrencyFormatter.formatDecimal(exchangeRate))"
+        }
+    }
+    
     // MARK: - Published Properties
     
     // Currency & Amount
@@ -48,6 +75,9 @@ final class DepositBuyViewModel: ObservableObject {
     @Published var viewState: ViewState = .input
     @Published var currentQuote: OnMetaService.Quote?
     @Published var unifiedQuote: UnifiedDepositQuote?  // NEW: Unified Fiat → PAXG quote
+    
+    // Quote display in user's currency
+    @Published var quoteInUserCurrency: QuoteInUserCurrency?
     
     // Swap-related
     @Published var usdcAmount: String = ""
@@ -66,11 +96,18 @@ final class DepositBuyViewModel: ObservableObject {
     @Published var showingError = false
     @Published var errorMessage = ""
     
+    // Currency Conversion
+    @Published var userCurrency: String = UserPreferences.defaultCurrency
+    @Published var usdcValueInUserCurrency: Decimal = 0
+    @Published var paxgValueInUserCurrency: Decimal = 0
+    @Published var estimatedPAXGInUserCurrency: Decimal = 0
+    
     // MARK: - Private Properties
     
     private let onMetaService: OnMetaService
     private let dexSwapService: DEXSwapService
     private let erc20Contract: ERC20Contract
+    private let currencyService = CurrencyService.shared
     private var cancellables = Set<AnyCancellable>()
     
     private var walletAddress: String? {
@@ -93,6 +130,114 @@ final class DepositBuyViewModel: ObservableObject {
             AppLogger.log("💰 DepositBuyViewModel initialized", category: "depositbuy")
             await self.loadBalances()
             await self.fetchGoldPrice()
+            self.setupObservers()
+        }
+    }
+    
+    // MARK: - Observers
+    
+    private func setupObservers() {
+        // Listen for currency changes from Settings
+        NotificationCenter.default.publisher(for: .currencyDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                guard let self = self else { return }
+                
+                if let newCurrency = notification.userInfo?["newCurrency"] as? String {
+                    AppLogger.log("💱 Wallet detected currency change to: \(newCurrency)", category: "depositbuy")
+                    self.userCurrency = newCurrency
+                    
+                    // Update deposit currency if supported
+                    if let fiatCurrency = FiatCurrency.from(code: newCurrency) {
+                        self.selectedFiatCurrency = fiatCurrency
+                        AppLogger.log("✅ Deposit currency updated to: \(fiatCurrency.displayName)", category: "depositbuy")
+                    }
+                    
+                    // CRITICAL: Force refresh rates from API, then update conversions
+                    Task {
+                        do {
+                            try await self.currencyService.fetchLiveExchangeRates()
+                            AppLogger.log("✅ Forced rate refresh for Wallet currency change", category: "depositbuy")
+                        } catch {
+                            AppLogger.log("⚠️ Rate refresh failed, using cached: \(error.localizedDescription)", category: "depositbuy")
+                        }
+                        
+                        await self.updateCurrencyConversions()
+                    }
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Update estimated PAXG value when USDC amount changes
+        $usdcAmount
+            .combineLatest($goldPrice)
+            .debounce(for: .milliseconds(300), scheduler: DispatchQueue.main)
+            .sink { [weak self] _, _ in
+                guard let self = self else { return }
+                Task {
+                    await self.updateEstimatedPAXGValue()
+                }
+            }
+            .store(in: &cancellables)
+    }
+    
+    // MARK: - Currency Conversion
+    
+    func updateCurrencyConversions() async {
+        do {
+            let conversionRate = try await currencyService.getConversionRate(
+                from: "USD",
+                to: userCurrency
+            )
+            
+            // Convert USDC balance
+            usdcValueInUserCurrency = usdcBalance * conversionRate
+            
+            // Convert PAXG balance (PAXG price is in USD)
+            paxgValueInUserCurrency = (paxgBalance * goldPrice) * conversionRate
+            
+            // Convert estimated PAXG from swap
+            if let estimatedAmount = Decimal(string: estimatedPAXGAmount) {
+                estimatedPAXGInUserCurrency = (estimatedAmount * goldPrice) * conversionRate
+            }
+            
+            AppLogger.log("""
+                💱 Currency conversions updated:
+                - User Currency: \(userCurrency)
+                - USDC: $\(usdcBalance) = \(formatCurrency(usdcValueInUserCurrency))
+                - PAXG: \(paxgBalance) oz = \(formatCurrency(paxgValueInUserCurrency))
+                """, category: "depositbuy")
+            
+        } catch {
+            AppLogger.log("⚠️ Failed to update currency conversions: \(error.localizedDescription)", category: "depositbuy")
+        }
+    }
+    
+    func formatCurrency(_ amount: Decimal) -> String {
+        guard let currency = Currency.getCurrency(code: userCurrency) else {
+            return "\(amount)"
+        }
+        return currency.format(amount)
+    }
+    
+    private func updateEstimatedPAXGValue() async {
+        guard let amount = Decimal(string: usdcAmount), goldPrice > 0 else {
+            estimatedPAXGInUserCurrency = 0
+            return
+        }
+        
+        do {
+            let paxgAmount = amount / goldPrice
+            let paxgValueUSD = paxgAmount * goldPrice
+            
+            let conversionRate = try await currencyService.getConversionRate(
+                from: "USD",
+                to: userCurrency
+            )
+            
+            estimatedPAXGInUserCurrency = paxgValueUSD * conversionRate
+        } catch {
+            AppLogger.log("⚠️ Failed to update estimated PAXG value: \(error.localizedDescription)", category: "depositbuy")
         }
     }
     
@@ -109,12 +254,70 @@ final class DepositBuyViewModel: ObservableObject {
         do {
             let quote = try await onMetaService.getQuote(inrAmount: inrAmount)
             currentQuote = quote
+            
+            // Convert quote to user's currency for display
+            await convertQuoteToUserCurrency(quote)
+            
             viewState = .quote
             AppLogger.log("✅ Quote received: \(quote.displayUsdcAmount)", category: "depositbuy")
         } catch {
             viewState = .error(error.localizedDescription)
             showError(error.localizedDescription)
             AppLogger.log("❌ Quote failed: \(error.localizedDescription)", category: "depositbuy")
+        }
+    }
+    
+    /// Convert OnMeta quote (in INR) to user's selected currency
+    private func convertQuoteToUserCurrency(_ quote: OnMetaService.Quote) async {
+        // If user's currency is already INR, no conversion needed
+        if userCurrency == "INR" {
+            quoteInUserCurrency = QuoteInUserCurrency(
+                fiatAmount: quote.inrAmount,
+                usdcAmount: quote.usdcAmount,
+                providerFee: quote.providerFee,
+                exchangeRate: quote.exchangeRate,
+                currencyCode: "INR",
+                currencySymbol: "₹",
+                estimatedTime: quote.estimatedTime
+            )
+            return
+        }
+        
+        // Convert INR values to user's currency
+        do {
+            let conversionRate = try await currencyService.getConversionRate(from: "INR", to: userCurrency)
+            
+            let convertedAmount = quote.inrAmount * conversionRate
+            let convertedFee = quote.providerFee * conversionRate
+            let convertedRate = quote.exchangeRate * conversionRate
+            
+            guard let currency = currencyService.getCurrency(code: userCurrency) else {
+                // Fallback to INR if currency not found
+                quoteInUserCurrency = nil
+                return
+            }
+            
+            quoteInUserCurrency = QuoteInUserCurrency(
+                fiatAmount: convertedAmount,
+                usdcAmount: quote.usdcAmount,
+                providerFee: convertedFee,
+                exchangeRate: convertedRate,
+                currencyCode: userCurrency,
+                currencySymbol: currency.symbol,
+                estimatedTime: quote.estimatedTime
+            )
+            
+            AppLogger.log("""
+                💱 Quote converted to \(userCurrency):
+                - Amount: \(convertedAmount) \(userCurrency) (was ₹\(quote.inrAmount))
+                - Rate: 1 USDC = \(convertedRate) \(userCurrency)
+                - Conversion Rate: 1 INR = \(conversionRate) \(userCurrency)
+                """, category: "depositbuy")
+            
+        } catch {
+            AppLogger.log("⚠️ Failed to convert quote to \(userCurrency): \(error.localizedDescription)", category: "depositbuy")
+            // Fallback: don't set quoteInUserCurrency, view will use original INR quote
+            quoteInUserCurrency = nil
         }
     }
     
@@ -381,6 +584,9 @@ final class DepositBuyViewModel: ObservableObject {
             paxgBalance = balances.first(where: { $0.symbol == "PAXG" })?.decimalBalance ?? 0
             
             AppLogger.log("💰 Balances: USDC=\(usdcBalance), PAXG=\(paxgBalance)", category: "depositbuy")
+            
+            // Update currency conversions after loading balances
+            await updateCurrencyConversions()
         } catch {
             AppLogger.log("❌ Failed to load balances: \(error.localizedDescription)", category: "depositbuy")
         }
@@ -391,6 +597,9 @@ final class DepositBuyViewModel: ObservableObject {
         // For now, use a static price
         goldPrice = ServiceConstants.goldPriceUSD
         AppLogger.log("💰 Gold price: $\(goldPrice)", category: "depositbuy")
+        
+        // Update currency conversions after getting price
+        await updateCurrencyConversions()
     }
     
     // MARK: - Helper Methods

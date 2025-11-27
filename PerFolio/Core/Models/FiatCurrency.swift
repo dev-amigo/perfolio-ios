@@ -218,9 +218,17 @@ enum FiatCurrency: String, CaseIterable, Identifiable {
 // MARK: - Static Helpers
 
 extension FiatCurrency {
-    /// Default currency (India first, then US)
+    /// Default currency based on user's preference in Settings
     static var `default`: FiatCurrency {
-        // Can be based on device locale in the future
+        // Get user's preferred currency from Settings
+        let userCurrencyCode = UserPreferences.defaultCurrency
+        
+        // Try to match with supported FiatCurrency
+        if let fiatCurrency = FiatCurrency.from(code: userCurrencyCode) {
+            return fiatCurrency
+        }
+        
+        // Fallback to INR if user's currency not supported for deposits
         return .inr
     }
     

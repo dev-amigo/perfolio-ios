@@ -1,5 +1,18 @@
 import Foundation
 
+/// Dashboard display type
+enum DashboardType: String, CaseIterable {
+    case regular = "regular"
+    case simplified = "simplified"
+    
+    var displayName: String {
+        switch self {
+        case .regular: return "Regular"
+        case .simplified: return "Simple"
+        }
+    }
+}
+
 /// Centralized user preferences management using UserDefaults
 struct UserPreferences {
     
@@ -16,6 +29,9 @@ struct UserPreferences {
         static let privyUserEmail = "privyUserEmail"
         static let themeVariant = "themeVariant"
         static let hasVisitedLoansTab = "hasVisitedLoansTab"
+        static let preferredDashboard = "preferredDashboard"
+        static let dashboardBaselineValue = "dashboardBaselineValue"
+        static let dashboardBaselineDate = "dashboardBaselineDate"
     }
     
     // MARK: - Currency Preferences
@@ -26,6 +42,9 @@ struct UserPreferences {
             UserDefaults.standard.string(forKey: Keys.defaultCurrency) ?? "INR"
         }
         set {
+            // Get old currency BEFORE setting new one
+            let oldCurrency = UserDefaults.standard.string(forKey: Keys.defaultCurrency) ?? "INR"
+            
             UserDefaults.standard.set(newValue, forKey: Keys.defaultCurrency)
             
             // Update symbol when currency changes
@@ -34,6 +53,18 @@ struct UserPreferences {
             }
             
             lastCurrencyUpdate = Date()
+            
+            // Notify observers that currency has changed (send BOTH old and new)
+            NotificationCenter.default.post(
+                name: .currencyDidChange,
+                object: nil,
+                userInfo: [
+                    "oldCurrency": oldCurrency,
+                    "newCurrency": newValue
+                ]
+            )
+            
+            AppLogger.log("💱 Currency changed: \(oldCurrency) → \(newValue), notifying observers", category: "preferences")
         }
     }
     
@@ -141,6 +172,46 @@ struct UserPreferences {
         }
         set {
             UserDefaults.standard.set(newValue, forKey: Keys.hasVisitedLoansTab)
+        }
+    }
+    
+    // MARK: - Dashboard Preferences
+    
+    /// User's preferred dashboard type
+    static var preferredDashboard: DashboardType {
+        get {
+            let raw = UserDefaults.standard.string(forKey: Keys.preferredDashboard) ?? DashboardType.regular.rawValue
+            return DashboardType(rawValue: raw) ?? .regular
+        }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: Keys.preferredDashboard)
+        }
+    }
+    
+    /// Baseline value for profit/loss calculation
+    static var dashboardBaselineValue: Decimal? {
+        get {
+            if let string = UserDefaults.standard.string(forKey: Keys.dashboardBaselineValue) {
+                return Decimal(string: string)
+            }
+            return nil
+        }
+        set {
+            if let value = newValue {
+                UserDefaults.standard.set(value.description, forKey: Keys.dashboardBaselineValue)
+            } else {
+                UserDefaults.standard.removeObject(forKey: Keys.dashboardBaselineValue)
+            }
+        }
+    }
+    
+    /// Date when baseline was set
+    static var dashboardBaselineDate: Date? {
+        get {
+            UserDefaults.standard.object(forKey: Keys.dashboardBaselineDate) as? Date
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: Keys.dashboardBaselineDate)
         }
     }
     

@@ -19,8 +19,15 @@ struct PerFolioDashboardView: View {
                     // Show onboarding timeline for ALL users at the top (collapsed by default)
                     onboardingSection
                     
-                    // Regular dashboard content below
-                    regularDashboardContent
+                    // Dashboard type toggle
+                    dashboardTypeToggle
+                    
+                    // Conditional dashboard display
+                    if viewModel.selectedDashboardType == .regular {
+                        regularDashboardContent
+                    } else {
+                        momDashboardContent
+                    }
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 24)
@@ -67,6 +74,23 @@ struct PerFolioDashboardView: View {
             // Set up onboarding timeline
             onboardingViewModel.setup(modelContext: modelContext, dashboardViewModel: viewModel)
         }
+        .onReceive(NotificationCenter.default.publisher(for: .currencyDidChange)) { notification in
+            // Force UI refresh when currency changes
+            // The computed properties will automatically use the new currency
+            if let newCurrency = notification.userInfo?["newCurrency"] as? String {
+                AppLogger.log("💱 Dashboard detected currency change to: \(newCurrency)", category: "dashboard")
+                
+                // Trigger a refresh of CurrencyService rates
+                Task {
+                    do {
+                        try await CurrencyService.shared.fetchLiveExchangeRates()
+                        AppLogger.log("✅ Dashboard refreshed currency rates", category: "dashboard")
+                    } catch {
+                        AppLogger.log("⚠️ Dashboard rate refresh failed: \(error.localizedDescription)", category: "dashboard")
+                    }
+                }
+            }
+        }
     }
     
     private func handleLogout() {
@@ -109,14 +133,15 @@ struct PerFolioDashboardView: View {
         onNavigateToTab?(destination)
     }
     
-    // MARK: - Golden Hero Card
+    // MARK: - Golden Hero Card (Portfolio Overview)
     
     private var goldenHeroCard: some View {
         PerFolioCard(style: .gradient) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Your Gold Portfolio")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
+            VStack(alignment: .leading, spacing: 16) {
+                // Title
+                Text("Your Portfolio")
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.9))
                 
                 if case .loading = viewModel.loadingState {
                     HStack {
@@ -127,13 +152,53 @@ struct PerFolioDashboardView: View {
                             .foregroundStyle(.white.opacity(0.8))
                     }
                 } else {
-                    Text(viewModel.totalPortfolioValue)
-                        .font(.system(size: 42, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
+                    VStack(alignment: .leading, spacing: 12) {
+                        // Main Section: Gold (PAXG) Value
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "sparkles")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundStyle(.yellow)
+                                Text("Gold (PAXG)")
+                                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                                    .foregroundStyle(.white.opacity(0.7))
+                            }
+                            
+                            Text(viewModel.goldPortfolioValue)
+                                .font(.system(size: 36, weight: .bold, design: .rounded))
+                                .foregroundStyle(.white)
+                        }
+                        
+                        // Divider
+                        Rectangle()
+                            .fill(.white.opacity(0.2))
+                            .frame(height: 1)
+                            .padding(.vertical, 4)
+                        
+                        // Secondary Section: Total Portfolio (PAXG + USDC)
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "chart.pie.fill")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundStyle(.white.opacity(0.7))
+                                Text("Total Portfolio")
+                                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                                    .foregroundStyle(.white.opacity(0.7))
+                                Text("(PAXG + USDC)")
+                                    .font(.system(size: 11, weight: .regular, design: .rounded))
+                                    .foregroundStyle(.white.opacity(0.5))
+                            }
+                            
+                            Text(viewModel.totalPortfolioValueInUserCurrency)
+                                .font(.system(size: 24, weight: .semibold, design: .rounded))
+                                .foregroundStyle(.white.opacity(0.85))
+                        }
+                    }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .id(UserPreferences.defaultCurrency)  // Force refresh when currency changes
     }
     
     // MARK: - Wallet Connection Card
@@ -266,17 +331,17 @@ struct PerFolioDashboardView: View {
                 Divider()
                     .background(themeManager.perfolioTheme.border)
                 
-                // Balance rows
+                // Balance rows (now shows in user's default currency)
                 PerFolioBalanceRow(
                     tokenSymbol: "PAXG",
                     tokenAmount: viewModel.paxgFormattedBalance,
-                    usdValue: viewModel.paxgUSDValue
+                    usdValue: viewModel.paxgValueInUserCurrency
                 )
                 
                 PerFolioBalanceRow(
                     tokenSymbol: "USDC",
                     tokenAmount: viewModel.usdcFormattedBalance,
-                    usdValue: viewModel.usdcUSDValue
+                    usdValue: viewModel.usdcValueInUserCurrency
                 )
                 
                 if case .failed(let error) = viewModel.loadingState {
@@ -443,6 +508,43 @@ struct PerFolioDashboardView: View {
                 }
             }
         }
+    }
+    
+    // MARK: - Dashboard Type Toggle
+    
+    private var dashboardTypeToggle: some View {
+        HStack {
+            Spacer()
+            
+            Picker("Dashboard Type", selection: $viewModel.selectedDashboardType) {
+                ForEach(DashboardType.allCases, id: \.self) { type in
+                    Text(type.displayName).tag(type)
+                }
+            }
+            .pickerStyle(.segmented)
+            .frame(width: 200)
+            .onChange(of: viewModel.selectedDashboardType) { _, newValue in
+                HapticManager.shared.light()
+                UserPreferences.preferredDashboard = newValue
+                AppLogger.log("📱 Dashboard type changed to: \(newValue.displayName)", category: "dashboard")
+            }
+            
+            Spacer()
+        }
+        .padding(.vertical, 12)
+    }
+    
+    // MARK: - Mom Dashboard Content
+    
+    private var momDashboardContent: some View {
+        MomDashboardView(
+            dashboardViewModel: viewModel,
+            onNavigateToDeposit: {
+                // Navigate to Wallet tab (Deposit section)
+                onNavigateToTab?("wallet")
+            }
+        )
+        .environmentObject(themeManager)
     }
 }
 

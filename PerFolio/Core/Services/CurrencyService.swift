@@ -28,6 +28,12 @@ final class CurrencyService: ObservableObject {
         return supportedCurrencies
     }
     
+    /// Get currency with LIVE conversion rate
+    /// This is the preferred method over Currency.getCurrency() which has static rates
+    func getCurrency(code: String) -> Currency? {
+        return supportedCurrencies.first { $0.id.uppercased() == code.uppercased() }
+    }
+    
     /// Get popular currencies only
     func getPopularCurrencies() -> [Currency] {
         return supportedCurrencies.filter { $0.isPopular }
@@ -49,8 +55,30 @@ final class CurrencyService: ObservableObject {
     
     // MARK: - Exchange Rates
     
-    /// Fetch live exchange rates from CoinGecko
-    /// Updates conversion rates for all supported currencies
+    /// Fetch live exchange rates from CoinGecko API
+    /// 
+    /// **DATA SOURCE:** CoinGecko Free API (No authentication required)
+    /// **ENDPOINT:** api.coingecko.com/api/v3/simple/price
+    /// **RATE LIMIT:** 50 calls/minute (generous for free tier)
+    /// **CACHE:** 5 minutes to minimize API calls
+    /// 
+    /// **HOW IT WORKS:**
+    /// 1. Queries CoinGecko for USDC price in all supported currencies
+    /// 2. Since USDC = $1 USD (stablecoin), rates = USD exchange rates
+    /// 3. Updates all Currency objects with live rates
+    /// 4. Stores cache timestamp
+    /// 
+    /// **EXAMPLE RESPONSE:**
+    /// ```json
+    /// {
+    ///   "usd-coin": {
+    ///     "inr": 83.50,
+    ///     "usd": 1.0,
+    ///     "eur": 0.92,
+    ///     ...
+    ///   }
+    /// }
+    /// ```
     func fetchLiveExchangeRates() async throws {
         isLoading = true
         defer { isLoading = false }
@@ -58,8 +86,8 @@ final class CurrencyService: ObservableObject {
         // Build currency list for API call
         let currencyIds = supportedCurrencies.map { $0.id.lowercased() }.joined(separator: ",")
         
-        // CoinGecko API endpoint for exchange rates
-        // We'll use USDC as base (it's 1:1 with USD)
+        // CoinGecko API endpoint for REAL-TIME exchange rates
+        // Using USDC as base (it's pegged 1:1 with USD)
         let urlString = "\(baseURL)/simple/price?ids=usd-coin&vs_currencies=\(currencyIds)"
         
         guard let url = URL(string: urlString) else {
@@ -101,19 +129,49 @@ final class CurrencyService: ObservableObject {
     }
     
     /// Get conversion rate between two currencies
+    /// 
+    /// **CALCULATION METHOD:**
+    /// Uses cross-rate calculation via USD as base currency
+    /// 
+    /// **EXAMPLE:** Converting EUR to INR
+    /// - 1 USD = 0.92 EUR (from CoinGecko)
+    /// - 1 USD = 83.50 INR (from CoinGecko)
+    /// - Therefore: 1 EUR = 83.50 / 0.92 = 90.76 INR
+    /// 
+    /// **FORMULA:**
+    /// Rate = (1 USD in TO currency) / (1 USD in FROM currency)
+    /// 
+    /// - Parameters:
+    ///   - from: Source currency code (e.g., "USD")
+    ///   - to: Target currency code (e.g., "INR")
+    /// - Returns: Conversion rate (e.g., 83.50 for USD→INR)
     func getConversionRate(from: String, to: String) async throws -> Decimal {
-        // Check if we need to refresh rates
+        // CRITICAL: Auto-refresh rates if cache expired (5 minutes)
+        // This ensures we ALWAYS have live rates from CoinGecko
         if shouldRefreshRates() {
+            AppLogger.log("🔄 Cache expired, fetching fresh rates from CoinGecko...", category: "currency")
             try await fetchLiveExchangeRates()
         }
         
-        guard let fromCurrency = Currency.getCurrency(code: from),
-              let toCurrency = Currency.getCurrency(code: to) else {
+        // Get currency objects from LIVE supportedCurrencies array (updated from API)
+        // NOT from static Currency.allCurrencies (which has hardcoded rates)
+        guard let fromCurrency = supportedCurrencies.first(where: { $0.id == from }),
+              let toCurrency = supportedCurrencies.first(where: { $0.id == to }) else {
             throw CurrencyError.unsupportedCurrency
         }
         
-        // Convert: from → USD → to
+        // Cross-rate calculation: from → USD → to
+        // Rate = (1 USD in TO currency) / (1 USD in FROM currency)
         let rate = toCurrency.conversionRate / fromCurrency.conversionRate
+        
+        AppLogger.log("""
+            💱 Conversion Rate Calculated (LIVE):
+            - From: \(from) (1 USD = \(fromCurrency.conversionRate) - LIVE)
+            - To: \(to) (1 USD = \(toCurrency.conversionRate) - LIVE)
+            - Rate: 1 \(from) = \(rate) \(to)
+            - Last Updated: \(lastUpdateDate?.description ?? "Never")
+            """, category: "currency")
+        
         return rate
     }
     

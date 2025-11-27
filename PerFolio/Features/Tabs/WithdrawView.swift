@@ -70,6 +70,15 @@ struct WithdrawSectionContent: View {
                 Text(message)
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .currencyDidChange)) { notification in
+            // Automatically refresh when currency changes in Settings
+            if let newCurrency = notification.userInfo?["newCurrency"] as? String {
+                AppLogger.log("💱 Withdraw View received currency change to: \(newCurrency)", category: "withdraw")
+                Task {
+                    await viewModel.fetchConversionRate()
+                }
+            }
+        }
     }
     
     private var isError: Bool {
@@ -131,7 +140,7 @@ struct WithdrawSectionContent: View {
                 PerFolioSectionHeader(
                     icon: "arrow.up.circle.fill",
                     title: "Cash Out to Bank Account",
-                    subtitle: "Convert USDC to INR and transfer to your bank"
+                    subtitle: "Convert USDC to \(viewModel.userCurrency) and transfer to your bank"
                 )
                 
                 Divider()
@@ -155,9 +164,10 @@ struct WithdrawSectionContent: View {
                         .foregroundStyle(themeManager.perfolioTheme.textSecondary)
                     
                     HStack {
-                        Image(systemName: "indianrupeesign")
+                        Text(viewModel.currencySymbol)
+                            .font(.system(size: 18, weight: .bold, design: .rounded))
                             .foregroundStyle(themeManager.perfolioTheme.tintColor)
-                        Text("INR")
+                        Text(viewModel.userCurrency)
                             .font(.system(size: 16, weight: .semibold, design: .rounded))
                             .foregroundStyle(themeManager.perfolioTheme.textPrimary)
                         Spacer()
@@ -221,7 +231,7 @@ struct WithdrawSectionContent: View {
                         Text("\(viewModel.formattedUSDCBalance)")
                             .font(.system(size: 20, weight: .bold, design: .rounded))
                             .foregroundStyle(themeManager.perfolioTheme.textPrimary)
-                        Text(viewModel.usdcBalanceINR)
+                        Text(viewModel.usdcBalanceInUserCurrency)
                             .font(.system(size: 14, weight: .regular, design: .rounded))
                             .foregroundStyle(themeManager.perfolioTheme.textSecondary)
                     }
@@ -239,7 +249,7 @@ struct WithdrawSectionContent: View {
     
     private var estimateBreakdown: some View {
         VStack(spacing: 8) {
-            PerFolioMetricRow(label: "You'll receive", value: viewModel.estimatedINRAmount)
+            PerFolioMetricRow(label: "You'll receive", value: viewModel.estimatedReceiveAmount)
             PerFolioMetricRow(label: "Provider fee", value: "\(viewModel.providerFeeAmount) (~2.5%)")
         }
         .padding(12)
@@ -265,7 +275,7 @@ struct WithdrawSectionContent: View {
                         .background(themeManager.perfolioTheme.border)
                     
                     infoRow(
-                        icon: "indianrupeesign.circle.fill",
+                        icon: "banknote.fill",
                         title: "Fees",
                         description: "Provider fees: 2-3% • Bank fees may apply"
                     )

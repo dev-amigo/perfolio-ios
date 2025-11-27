@@ -5,18 +5,42 @@ struct PAXGPriceChartView: View {
     @EnvironmentObject private var themeManager: ThemeManager
     let data: [PricePoint]
     
+    // User's selected currency for price display
+    private var userCurrency: String {
+        UserPreferences.defaultCurrency
+    }
+    
+    // Get conversion rate from USD to user's currency
+    private var conversionRate: Decimal {
+        guard let currency = CurrencyService.shared.getCurrency(code: userCurrency) else {
+            return 1.0
+        }
+        return currency.conversionRate
+    }
+    
+    // Get currency symbol
+    private var currencySymbol: String {
+        guard let currency = CurrencyService.shared.getCurrency(code: userCurrency) else {
+            return "$"
+        }
+        return currency.symbol
+    }
+    
     var body: some View {
         Chart(data) { point in
+            let convertedPrice = point.price * conversionRate
+            let priceDouble = NSDecimalNumber(decimal: convertedPrice).doubleValue
+            
             LineMark(
                 x: .value("Date", point.date),
-                y: .value("Price", NSDecimalNumber(decimal: point.price).doubleValue)
+                y: .value("Price", priceDouble)
             )
             .foregroundStyle(themeManager.perfolioTheme.tintColor)
             .lineStyle(StrokeStyle(lineWidth: 2))
             
             AreaMark(
                 x: .value("Date", point.date),
-                y: .value("Price", NSDecimalNumber(decimal: point.price).doubleValue)
+                y: .value("Price", priceDouble)
             )
             .foregroundStyle(
                 LinearGradient(
@@ -71,9 +95,10 @@ struct PAXGPriceChartView: View {
     private func formatPrice(_ price: Double) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
-        formatter.currencyCode = "USD"
+        formatter.currencyCode = userCurrency
+        formatter.currencySymbol = currencySymbol
         formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: price)) ?? "$0"
+        return formatter.string(from: NSNumber(value: price)) ?? "\(currencySymbol)0"
     }
 }
 

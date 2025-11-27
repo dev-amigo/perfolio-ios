@@ -56,17 +56,15 @@ struct PerFolioCard<Content: View>: View {
     }
     
     private var shadowColor: Color {
-        style == .gradient
-            ? themeManager.perfolioTheme.tintColor.opacity(0.3)
-            : .clear
+        .clear  // No shadow
     }
     
     private var shadowRadius: CGFloat {
-        style == .gradient ? 20 : 0
+        0  // No shadow
     }
     
     private var shadowY: CGFloat {
-        style == .gradient ? 10 : 0
+        0  // No shadow
     }
 }
 

@@ -29,15 +29,19 @@ final class WithdrawViewModel: ObservableObject {
     @Published var usdcAmount: String = ""
     @Published var usdcBalance: Decimal = 0
     @Published var viewState: ViewState = .loading
+    @Published var userCurrency: String = UserPreferences.defaultCurrency
+    @Published var conversionRate: Decimal = 83.00  // Live rate from API
     
-    // Exchange rate (1 USDC = ₹83.00 for withdrawal)
-    private let usdcToInrRate: Decimal = 83.00
+    // Fee configuration
     private let providerFeePercentage: Decimal = 0.025  // 2.5%
     
     // MARK: - Private Properties
     
     private let erc20Contract: ERC20Contract
     private let transakService: TransakService
+    private let currencyService = CurrencyService.shared
+    private var cancellables = Set<AnyCancellable>()
+    
     private var walletAddress: String? {
         UserDefaults.standard.string(forKey: "userWalletAddress")
     }
@@ -48,32 +52,50 @@ final class WithdrawViewModel: ObservableObject {
         CurrencyFormatter.formatToken(usdcBalance, symbol: "USDC")
     }
     
-    var usdcBalanceINR: String {
-        let inrValue = usdcBalance * usdcToInrRate
-        return CurrencyFormatter.formatINR(inrValue)
+    var usdcBalanceInUserCurrency: String {
+        let value = usdcBalance * conversionRate
+        return formatCurrency(value)
     }
     
-    var estimatedINRAmount: String {
+    var estimatedReceiveAmount: String {
         guard let amount = Decimal(string: usdcAmount), amount > 0 else {
-            return "≈ ₹0.00"
+            return "≈ \(currencySymbol)0.00"
         }
         
-        let grossINR = amount * usdcToInrRate
-        let fee = grossINR * providerFeePercentage
-        let netINR = grossINR - fee
+        let grossAmount = amount * conversionRate
+        let fee = grossAmount * providerFeePercentage
+        let netAmount = grossAmount - fee
         
-        return CurrencyFormatter.formatINR(netINR)
+        return formatCurrency(netAmount)
     }
     
     var providerFeeAmount: String {
         guard let amount = Decimal(string: usdcAmount), amount > 0 else {
-            return "₹0.00"
+            return "\(currencySymbol)0.00"
         }
         
-        let grossINR = amount * usdcToInrRate
-        let fee = grossINR * providerFeePercentage
+        let grossAmount = amount * conversionRate
+        let fee = grossAmount * providerFeePercentage
         
-        return CurrencyFormatter.formatINR(fee)
+        return formatCurrency(fee)
+    }
+    
+    var currencySymbol: String {
+        // Use CurrencyService which has LIVE rates, not static Currency.getCurrency()
+        currencyService.getCurrency(code: userCurrency)?.symbol ?? "$"
+    }
+    
+    var currencyName: String {
+        // Use CurrencyService which has LIVE rates, not static Currency.getCurrency()
+        currencyService.getCurrency(code: userCurrency)?.name ?? "USD"
+    }
+    
+    func formatCurrency(_ amount: Decimal) -> String {
+        // Use CurrencyService which has LIVE rates, not static Currency.getCurrency()
+        guard let currency = currencyService.getCurrency(code: userCurrency) else {
+            return "\(amount)"
+        }
+        return currency.format(amount)
     }
     
     var isValidAmount: Bool {
@@ -94,7 +116,62 @@ final class WithdrawViewModel: ObservableObject {
         
         Task { @MainActor in
             AppLogger.log("💸 WithdrawViewModel initialized", category: "withdraw")
-            await loadBalance()
+            await self.loadBalance()
+            await self.fetchConversionRate()
+            self.setupObservers()
+        }
+    }
+    
+    // MARK: - Observers
+    
+    private func setupObservers() {
+        // Listen for currency changes from Settings
+        NotificationCenter.default.publisher(for: .currencyDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                guard let self = self else { return }
+                
+                if let newCurrency = notification.userInfo?["newCurrency"] as? String {
+                    AppLogger.log("💱 Withdraw detected currency change to: \(newCurrency)", category: "withdraw")
+                    self.userCurrency = newCurrency
+                    
+                    // CRITICAL: Force refresh rates from API, then fetch conversion
+                    Task {
+                        do {
+                            try await self.currencyService.fetchLiveExchangeRates()
+                            AppLogger.log("✅ Forced rate refresh for Withdraw currency change", category: "withdraw")
+                        } catch {
+                            AppLogger.log("⚠️ Rate refresh failed, using cached: \(error.localizedDescription)", category: "withdraw")
+                        }
+                        
+                        await self.fetchConversionRate()
+                    }
+                }
+            }
+            .store(in: &cancellables)
+    }
+    
+    // MARK: - Currency Conversion
+    
+    func fetchConversionRate() async {
+        do {
+            // Get LIVE conversion rate from CurrencyService
+            // This uses the updated supportedCurrencies array with fresh rates
+            conversionRate = try await currencyService.getConversionRate(
+                from: "USD",
+                to: userCurrency
+            )
+            
+            AppLogger.log("""
+                💱 Withdraw conversion rate updated (LIVE):
+                - Currency: \(userCurrency)
+                - Rate: 1 USD = \(conversionRate) \(userCurrency)
+                - Source: CoinGecko API
+                """, category: "withdraw")
+            
+        } catch {
+            AppLogger.log("⚠️ Failed to fetch conversion rate: \(error.localizedDescription)", category: "withdraw")
+            // Keep existing rate as fallback
         }
     }
     

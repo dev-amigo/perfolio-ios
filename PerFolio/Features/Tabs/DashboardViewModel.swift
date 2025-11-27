@@ -18,6 +18,7 @@ final class DashboardViewModel: ObservableObject {
     @Published var borrowPositions: [BorrowPosition] = []
     @Published var priceHistory: [PricePoint] = []
     @Published var currentPAXGPrice: Decimal = 2400
+    @Published var selectedDashboardType: DashboardType = UserPreferences.preferredDashboard
     
     private let web3Client: Web3Client
     private let erc20Contract: ERC20Contract
@@ -156,6 +157,76 @@ final class DashboardViewModel: ObservableObject {
         return formatter.string(from: balance.decimalBalance as NSDecimalNumber) ?? "$0.00"
     }
     
+    // MARK: - User Currency Values (Dynamic based on Settings)
+    
+    var paxgValueInUserCurrency: String {
+        guard let balance = paxgBalance else {
+            return formatUserCurrency(0)
+        }
+        
+        // Calculate PAXG value in USD first
+        let paxgValueUSD = balance.decimalBalance * currentPAXGPrice
+        
+        // Convert to user's currency
+        let userCurrency = UserPreferences.defaultCurrency
+        
+        // If user currency is USD, return directly
+        if userCurrency == "USD" {
+            return formatUserCurrency(paxgValueUSD)
+        }
+        
+        // Otherwise, convert using live rates
+        return convertAndFormat(usdAmount: paxgValueUSD)
+    }
+    
+    var usdcValueInUserCurrency: String {
+        guard let balance = usdcBalance else {
+            return formatUserCurrency(0)
+        }
+        
+        // USDC is 1:1 with USD
+        let usdcValueUSD = balance.decimalBalance
+        
+        // Convert to user's currency
+        let userCurrency = UserPreferences.defaultCurrency
+        
+        // If user currency is USD, return directly
+        if userCurrency == "USD" {
+            return formatUserCurrency(usdcValueUSD)
+        }
+        
+        // Otherwise, convert using live rates
+        return convertAndFormat(usdAmount: usdcValueUSD)
+    }
+    
+    // Helper to convert USD to user currency and format
+    private func convertAndFormat(usdAmount: Decimal) -> String {
+        let userCurrency = UserPreferences.defaultCurrency
+        
+        // Try to get live currency with conversion rate
+        guard let currency = CurrencyService.shared.getCurrency(code: userCurrency) else {
+            // Fallback to USD
+            return formatUserCurrency(usdAmount)
+        }
+        
+        // Convert USD to user currency using live rate
+        let convertedAmount = usdAmount * currency.conversionRate
+        
+        return formatUserCurrency(convertedAmount)
+    }
+    
+    // Helper to format amount in user's currency
+    private func formatUserCurrency(_ amount: Decimal) -> String {
+        let userCurrency = UserPreferences.defaultCurrency
+        
+        guard let currency = CurrencyService.shared.getCurrency(code: userCurrency) else {
+            // Fallback formatting
+            return "\(amount)"
+        }
+        
+        return currency.format(amount)
+    }
+    
     var totalPortfolioValue: String {
         guard let paxg = paxgBalance, let usdc = usdcBalance else {
             return "$0.00"
@@ -171,6 +242,48 @@ final class DashboardViewModel: ObservableObject {
         return formatter.string(from: totalValue as NSDecimalNumber) ?? "$0.00"
     }
     
+    // MARK: - Portfolio Values in User Currency
+    
+    /// Gold (PAXG) portfolio value in user's selected currency
+    var goldPortfolioValue: String {
+        guard let balance = paxgBalance else {
+            return formatUserCurrency(0)
+        }
+        
+        // Calculate PAXG value in USD
+        let paxgValueUSD = balance.decimalBalance * currentPAXGPrice
+        
+        // Convert to user's currency
+        let userCurrency = UserPreferences.defaultCurrency
+        
+        if userCurrency == "USD" {
+            return formatUserCurrency(paxgValueUSD)
+        }
+        
+        return convertAndFormat(usdAmount: paxgValueUSD)
+    }
+    
+    /// Total portfolio value (PAXG + USDC) in user's selected currency
+    var totalPortfolioValueInUserCurrency: String {
+        guard let paxg = paxgBalance, let usdc = usdcBalance else {
+            return formatUserCurrency(0)
+        }
+        
+        // Calculate total in USD first
+        let paxgValueUSD = paxg.decimalBalance * currentPAXGPrice
+        let usdcValueUSD = usdc.decimalBalance
+        let totalUSD = paxgValueUSD + usdcValueUSD
+        
+        // Convert to user's currency
+        let userCurrency = UserPreferences.defaultCurrency
+        
+        if userCurrency == "USD" {
+            return formatUserCurrency(totalUSD)
+        }
+        
+        return convertAndFormat(usdAmount: totalUSD)
+    }
+    
     // MARK: - Statistics Computed Properties
     
     var totalCollateral: String {
@@ -180,9 +293,9 @@ final class DashboardViewModel: ObservableObject {
     }
     
     var totalCollateralUSD: String {
-        guard !borrowPositions.isEmpty else { return "$0.00" }
+        guard !borrowPositions.isEmpty else { return formatUserCurrency(0) }
         let total = borrowPositions.reduce(into: Decimal(0)) { $0 += $1.collateralValueUSD }
-        return formatCurrency(total)
+        return convertAndFormat(usdAmount: total)
     }
     
     var totalBorrowed: String {
@@ -192,9 +305,9 @@ final class DashboardViewModel: ObservableObject {
     }
     
     var totalBorrowedUSD: String {
-        guard !borrowPositions.isEmpty else { return "$0.00" }
+        guard !borrowPositions.isEmpty else { return formatUserCurrency(0) }
         let total = borrowPositions.reduce(into: Decimal(0)) { $0 += $1.debtValueUSD }
-        return formatCurrency(total)
+        return convertAndFormat(usdAmount: total)
     }
     
     var healthFactor: String {
@@ -247,7 +360,7 @@ final class DashboardViewModel: ObservableObject {
     // MARK: - Price Chart Properties
     
     var paxgCurrentPriceFormatted: String {
-        return formatCurrency(currentPAXGPrice)
+        return convertAndFormat(usdAmount: currentPAXGPrice)
     }
     
     var paxgPriceChange: String {

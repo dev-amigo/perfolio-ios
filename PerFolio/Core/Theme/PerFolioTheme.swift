@@ -73,7 +73,11 @@ struct PerFolioTheme {
         tintColor: Color(hex: "D0B070"),
         buttonBackground: Color(hex: "9D7618"),
         goldenBoxGradient: LinearGradient(
-            colors: [Color(hex: "D0B070"), Color(hex: "B88A3C")],
+            colors: [
+                Color(hex: "3D3020"),  // Dark brown-gold
+                Color(hex: "2A2416"),  // Darker brown-gold
+                Color(hex: "1F1A10")   // Very dark brown (almost black)
+            ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         ),
