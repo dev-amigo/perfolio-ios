@@ -19,11 +19,13 @@ final class DashboardViewModel: ObservableObject {
     @Published var priceHistory: [PricePoint] = []
     @Published var currentPAXGPrice: Decimal = 2400
     @Published var selectedDashboardType: DashboardType = UserPreferences.preferredDashboard
+    @Published private var currencyRefreshTrigger: Int = 0 // Trigger UI refresh on currency change
     
     private let web3Client: Web3Client
     private let erc20Contract: ERC20Contract
     private let fluidPositionsService: FluidPositionsService
     private let priceOracleService: PriceOracleService
+    private var cancellables = Set<AnyCancellable>()
     
     init(
         web3Client: Web3Client = Web3Client(),
@@ -35,6 +37,29 @@ final class DashboardViewModel: ObservableObject {
         self.erc20Contract = erc20Contract ?? ERC20Contract(web3Client: web3Client)
         self.fluidPositionsService = fluidPositionsService ?? FluidPositionsService(web3Client: web3Client)
         self.priceOracleService = priceOracleService ?? PriceOracleService()
+        
+        setupCurrencyObserver()
+    }
+    
+    private func setupCurrencyObserver() {
+        NotificationCenter.default.publisher(for: .currencyDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                guard let self = self else { return }
+                
+                if let newCurrency = notification.userInfo?["newCurrency"] as? String {
+                    AppLogger.log("💱 DashboardViewModel detected currency change to: \(newCurrency)", category: "dashboard")
+                    
+                    // Trigger UI refresh by updating published property
+                    self.currencyRefreshTrigger += 1
+                    
+                    // Force objectWillChange to notify all views
+                    self.objectWillChange.send()
+                    
+                    AppLogger.log("✅ Dashboard UI refresh triggered", category: "dashboard")
+                }
+            }
+            .store(in: &cancellables)
     }
     
     var isWalletConnected: Bool {
