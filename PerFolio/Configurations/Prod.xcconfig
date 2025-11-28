@@ -20,3 +20,8 @@ TRANSAK_API_KEY = 4f4d1fff-3bba-4749-aa07-11d0667adbf4
 // 1inch DEX Configuration (for USDT→PAXG swaps)
 ONEINCH_API_KEY = your_1inch_api_key_here
 ZEROX_API_KEY = 500e6659-f085-4d26-9fb4-933eea6d7170
+
+// CoinGecko API Configuration (for price feeds & currency conversion)
+// Free tier: 10,000-30,000 calls/month
+// Get your key at: https://www.coingecko.com/en/api
+COINGECKO_API_KEY = 

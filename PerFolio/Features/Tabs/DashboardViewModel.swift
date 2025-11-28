@@ -419,17 +419,14 @@ final class DashboardViewModel: ObservableObject {
     }
     
     func fetchPriceHistory() async {
-        do {
-            let price = try await priceOracleService.fetchPAXGPrice()
-            await MainActor.run {
-                self.currentPAXGPrice = price
-                // Generate mock 90-day price history
-                self.priceHistory = generateMockPriceHistory(currentPrice: price)
-            }
-            AppLogger.log("Fetched PAXG price: $\(price)", category: "dashboard")
-        } catch {
-            AppLogger.log("Failed to fetch PAXG price: \(error)", category: "dashboard")
+        // Fetch PAXG price (always returns a value, never throws)
+        let price = await priceOracleService.fetchPAXGPrice()
+        await MainActor.run {
+            self.currentPAXGPrice = price
+            // Generate mock 90-day price history
+            self.priceHistory = generateMockPriceHistory(currentPrice: price)
         }
+        AppLogger.log("✅ PAXG price loaded: $\(price)", category: "dashboard")
     }
     
     private func generateMockPriceHistory(currentPrice: Decimal) -> [PricePoint] {

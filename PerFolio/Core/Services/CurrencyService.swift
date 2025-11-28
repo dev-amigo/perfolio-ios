@@ -13,7 +13,13 @@ final class CurrencyService: ObservableObject {
     
     private let baseURL = "https://api.coingecko.com/api/v3"
     private var conversionRatesCache: [String: Decimal] = [:]
-    private let cacheExpiryInterval: TimeInterval = 300 // 5 minutes
+    private let cacheExpiryInterval: TimeInterval = 1800 // 30 minutes (increased from 5 for rate limiting)
+    
+    // Rate limiting & backoff
+    private var lastRequestTime: Date?
+    private var consecutiveFailures: Int = 0
+    private let minRequestInterval: TimeInterval = 1.0 // 1 second between requests
+    private let maxBackoffDelay: TimeInterval = 300 // 5 minutes max backoff
     
     private init() {
         lastUpdateDate = UserPreferences.lastCurrencyUpdate
@@ -80,25 +86,68 @@ final class CurrencyService: ObservableObject {
     /// }
     /// ```
     func fetchLiveExchangeRates() async throws {
+        // Check if we should wait due to rate limiting
+        if let backoffDelay = getBackoffDelay() {
+            AppLogger.log("⏸️ Rate limited: waiting \(Int(backoffDelay))s before retry", category: "currency")
+            throw CurrencyError.rateLimited(retryAfter: backoffDelay)
+        }
+        
+        // Rate limiting: enforce minimum interval between requests
+        if let lastRequest = lastRequestTime {
+            let timeSinceLastRequest = Date().timeIntervalSince(lastRequest)
+            if timeSinceLastRequest < minRequestInterval {
+                let waitTime = minRequestInterval - timeSinceLastRequest
+                AppLogger.log("⏱️ Rate limiting: waiting \(waitTime)s", category: "currency")
+                try await Task.sleep(nanoseconds: UInt64(waitTime * 1_000_000_000))
+            }
+        }
+        
         isLoading = true
         defer { isLoading = false }
         
         // Build currency list for API call
         let currencyIds = supportedCurrencies.map { $0.id.lowercased() }.joined(separator: ",")
         
+        // Get API key from bundle (optional)
+        let apiKey = Bundle.main.object(forInfoDictionaryKey: "AGCoinGeckoAPIKey") as? String
+        
         // CoinGecko API endpoint for REAL-TIME exchange rates
         // Using USDC as base (it's pegged 1:1 with USD)
-        let urlString = "\(baseURL)/simple/price?ids=usd-coin&vs_currencies=\(currencyIds)"
+        var urlString = "\(baseURL)/simple/price?ids=usd-coin&vs_currencies=\(currencyIds)"
+        
+        // Add API key if available (Pro/Free tier)
+        if let apiKey = apiKey, !apiKey.isEmpty {
+            urlString += "&x_cg_pro_api_key=\(apiKey)"
+            AppLogger.log("🔑 Using CoinGecko API key", category: "currency")
+        } else {
+            AppLogger.log("⚠️ No API key - using free tier (50 calls/min limit)", category: "currency")
+        }
         
         guard let url = URL(string: urlString) else {
             throw CurrencyError.invalidURL
         }
         
+        // Record request time for rate limiting
+        lastRequestTime = Date()
+        
         do {
             let (data, response) = try await URLSession.shared.data(from: url)
             
-            guard let httpResponse = response as? HTTPURLResponse,
-                  httpResponse.statusCode == 200 else {
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw CurrencyError.networkError
+            }
+            
+            // Handle rate limiting (429)
+            if httpResponse.statusCode == 429 {
+                consecutiveFailures += 1
+                let retryAfter = getBackoffDelay() ?? 60
+                AppLogger.log("🚫 Rate limited (429): backing off for \(Int(retryAfter))s (failure #\(consecutiveFailures))", category: "currency")
+                throw CurrencyError.rateLimited(retryAfter: retryAfter)
+            }
+            
+            guard httpResponse.statusCode == 200 else {
+                consecutiveFailures += 1
+                AppLogger.log("❌ HTTP error: \(httpResponse.statusCode)", category: "currency")
                 throw CurrencyError.networkError
             }
             
@@ -120,12 +169,32 @@ final class CurrencyService: ObservableObject {
             lastUpdateDate = Date()
             UserPreferences.lastCurrencyUpdate = lastUpdateDate
             
+            // Reset failure count on success
+            consecutiveFailures = 0
+            
             AppLogger.log("✅ Exchange rates updated: \(usdcRates.count) currencies", category: "currency")
             
         } catch {
             AppLogger.log("❌ Failed to fetch exchange rates: \(error.localizedDescription)", category: "currency")
+            
+            // Don't increment failures if it's already a rate limit error
+            if case CurrencyError.rateLimited = error {
+                // Already handled above
+            } else {
+                consecutiveFailures += 1
+            }
+            
             throw CurrencyError.fetchFailed(error)
         }
+    }
+    
+    /// Calculate exponential backoff delay based on consecutive failures
+    private func getBackoffDelay() -> TimeInterval? {
+        guard consecutiveFailures > 0 else { return nil }
+        
+        // Exponential backoff: 2^n seconds, capped at maxBackoffDelay
+        let delay = min(pow(2.0, Double(consecutiveFailures)), maxBackoffDelay)
+        return delay
     }
     
     /// Get conversion rate between two currencies
@@ -146,30 +215,36 @@ final class CurrencyService: ObservableObject {
     ///   - to: Target currency code (e.g., "INR")
     /// - Returns: Conversion rate (e.g., 83.50 for USD→INR)
     func getConversionRate(from: String, to: String) async throws -> Decimal {
-        // CRITICAL: Auto-refresh rates if cache expired (5 minutes)
-        // This ensures we ALWAYS have live rates from CoinGecko
+        // Try to refresh if cache expired
         if shouldRefreshRates() {
-            AppLogger.log("🔄 Cache expired, fetching fresh rates from CoinGecko...", category: "currency")
-            try await fetchLiveExchangeRates()
+            AppLogger.log("🔄 Cache expired, attempting to fetch fresh rates...", category: "currency")
+            do {
+                try await fetchLiveExchangeRates()
+            } catch {
+                AppLogger.log("⚠️ Failed to refresh rates, using cached/default values: \(error.localizedDescription)", category: "currency")
+                // Continue with cached rates - don't throw
+            }
         }
         
         // Get currency objects from LIVE supportedCurrencies array (updated from API)
         // NOT from static Currency.allCurrencies (which has hardcoded rates)
         guard let fromCurrency = supportedCurrencies.first(where: { $0.id == from }),
               let toCurrency = supportedCurrencies.first(where: { $0.id == to }) else {
-            throw CurrencyError.unsupportedCurrency
+            AppLogger.log("⚠️ Unsupported currency pair: \(from) → \(to), returning 1.0", category: "currency")
+            return 1.0 // Default fallback
         }
         
         // Cross-rate calculation: from → USD → to
         // Rate = (1 USD in TO currency) / (1 USD in FROM currency)
         let rate = toCurrency.conversionRate / fromCurrency.conversionRate
         
+        let dataSource = shouldRefreshRates() ? "CACHED" : "LIVE"
         AppLogger.log("""
-            💱 Conversion Rate Calculated (LIVE):
-            - From: \(from) (1 USD = \(fromCurrency.conversionRate) - LIVE)
-            - To: \(to) (1 USD = \(toCurrency.conversionRate) - LIVE)
+            💱 Conversion Rate (\(dataSource)):
+            - From: \(from) (1 USD = \(fromCurrency.conversionRate))
+            - To: \(to) (1 USD = \(toCurrency.conversionRate))
             - Rate: 1 \(from) = \(rate) \(to)
-            - Last Updated: \(lastUpdateDate?.description ?? "Never")
+            - Last Updated: \(lastUpdateDate?.description ?? "Using defaults")
             """, category: "currency")
         
         return rate
@@ -297,6 +372,7 @@ enum CurrencyError: LocalizedError {
     case invalidResponse
     case unsupportedCurrency
     case fetchFailed(Error)
+    case rateLimited(retryAfter: TimeInterval)
     
     var errorDescription: String? {
         switch self {
@@ -310,6 +386,8 @@ enum CurrencyError: LocalizedError {
             return "Currency not supported"
         case .fetchFailed(let error):
             return "Failed to fetch data: \(error.localizedDescription)"
+        case .rateLimited(let retryAfter):
+            return "Rate limited. Please wait \(Int(retryAfter)) seconds before retrying."
         }
     }
 }

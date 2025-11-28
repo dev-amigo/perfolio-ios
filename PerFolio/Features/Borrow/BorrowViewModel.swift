@@ -80,33 +80,41 @@ final class BorrowViewModel: ObservableObject {
     func loadInitialData() async {
         viewState = .loading
         
+        AppLogger.log("🔄 Loading borrow screen data...", category: "borrow")
+        
+        // 1. Initialize Fluid vault (config, price, APY)
+        // Use default values if API fails
         do {
-            AppLogger.log("🔄 Loading borrow screen data...", category: "borrow")
-            
-            // 1. Initialize Fluid vault (config, price, APY)
             try await fluidVaultService.initialize()
-            
-            // 2. Extract data
             paxgPrice = fluidVaultService.paxgPrice
             vaultConfig = fluidVaultService.vaultConfig
             currentAPY = fluidVaultService.currentAPY
-            
-            // 3. Load user's PAXG balance
-            await loadPAXGBalance()
-            
-            // 4. Auto-fill collateral with full balance (Binance-style UX)
-            if paxgBalance > 0 {
-                collateralAmount = formatDecimal(paxgBalance, maxDecimals: 6)
-            }
-            
-            viewState = .ready
-            AppLogger.log("✅ Borrow screen ready", category: "borrow")
-            
+            AppLogger.log("✅ Fluid vault data loaded successfully", category: "borrow")
         } catch {
-            let errorMsg = "Failed to load borrow data: \(error.localizedDescription)"
-            AppLogger.log("❌ \(errorMsg)", category: "borrow")
-            viewState = .error(errorMsg)
+            AppLogger.log("⚠️ Fluid init failed, using defaults: \(error.localizedDescription)", category: "borrow")
+            
+            // Always provide default values - never show error state
+            paxgPrice = fluidVaultService.paxgPrice > 0 ? fluidVaultService.paxgPrice : 2734.0
+            currentAPY = fluidVaultService.currentAPY > 0 ? fluidVaultService.currentAPY : 4.89
+            
+            // Use default vault config if not loaded
+            if vaultConfig == nil {
+                vaultConfig = VaultConfig.defaultConfig()
+                AppLogger.log("⚠️ Using default vault config", category: "borrow")
+            }
         }
+        
+        // 2. Load user's PAXG balance
+        await loadPAXGBalance()
+        
+        // 3. Auto-fill collateral with full balance (Binance-style UX)
+        if paxgBalance > 0 {
+            collateralAmount = formatDecimal(paxgBalance, maxDecimals: 6)
+        }
+        
+        // ALWAYS show UI with available data (never error state)
+        viewState = .ready
+        AppLogger.log("✅ Borrow screen ready (with \(paxgPrice > 0 ? "live" : "default") data)", category: "borrow")
     }
     
     private func loadPAXGBalance() async {

@@ -109,6 +109,8 @@
 	<string>$(PRIVY_JWKS_URL)</string>
 	<key>AGAlchemyAPIKey</key>
 	<string>$(ALCHEMY_API_KEY)</string>
+	<key>AGCoinGeckoAPIKey</key>
+	<string>$(COINGECKO_API_KEY)</string>
 	<key>AGZeroXAPIKey</key>
 	<string>$(ZEROX_API_KEY)</string>
 	<key>AGEthereumRPCFallback</key>

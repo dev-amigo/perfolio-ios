@@ -56,11 +56,14 @@ class FluidVaultService: ObservableObject {
         
         do {
             // Fetch all data in parallel for speed
+            // Note: fetchPAXGPrice() never throws - always returns a value
             async let config = vaultConfigService.fetchVaultConfig()
-            async let price = priceOracleService.fetchPAXGPrice()
+            let price = await priceOracleService.fetchPAXGPrice()  // Never throws
             async let apy = apyService.fetchBorrowAPY()
             
-            (vaultConfig, paxgPrice, currentAPY) = try await (config, price, apy)
+            vaultConfig = try await config
+            paxgPrice = price
+            currentAPY = try await apy
             
             AppLogger.log("✅ Fluid vault initialized:", category: "fluid")
             AppLogger.log("   PAXG Price: $\(paxgPrice)", category: "fluid")
@@ -69,6 +72,13 @@ class FluidVaultService: ObservableObject {
             
         } catch {
             AppLogger.log("❌ Fluid initialization failed: \(error.localizedDescription)", category: "fluid")
+            
+            // Even if config/APY fails, ensure we have a PAXG price
+            if paxgPrice == 0 {
+                paxgPrice = await priceOracleService.fetchPAXGPrice()
+                AppLogger.log("⚠️ Using price despite init failure: $\(paxgPrice)", category: "fluid")
+            }
+            
             throw error
         }
     }

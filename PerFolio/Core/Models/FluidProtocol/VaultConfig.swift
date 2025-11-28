@@ -95,5 +95,18 @@ extension VaultConfig {
             liquidationPenalty: 3.0
         )
     }
+    
+    /// Default configuration used when API fails
+    /// Provides safe, conservative values for borrowing
+    static func defaultConfig() -> VaultConfig {
+        return VaultConfig(
+            vaultAddress: ContractAddresses.fluidPaxgUsdcVault,
+            supplyToken: ContractAddresses.paxg,
+            borrowToken: ContractAddresses.usdc,
+            maxLTV: 75.0,          // 75% max loan-to-value (safe)
+            liquidationThreshold: 85.0,  // 85% liquidation threshold
+            liquidationPenalty: 3.0      // 3% liquidation penalty
+        )
+    }
 }
 

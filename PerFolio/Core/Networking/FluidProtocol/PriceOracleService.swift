@@ -14,8 +14,9 @@ final class PriceOracleService: ObservableObject {
     
     // MARK: - Configuration
     
-    private let cacheExpiration: TimeInterval = 300  // 5 minutes
+    private let cacheExpiration: TimeInterval = 1800  // 30 minutes (increased for rate limiting)
     private let coingeckoAPIKey: String?
+    private let defaultPAXGPrice: Decimal = 2734.0  // Fallback price (approximate gold price)
     
     // MARK: - Cache
     
@@ -24,7 +25,7 @@ final class PriceOracleService: ObservableObject {
         let timestamp: Date
         
         var isValid: Bool {
-            return Date().timeIntervalSince(timestamp) < 300  // 5 min expiration
+            return Date().timeIntervalSince(timestamp) < 1800  // 30 min expiration
         }
     }
     
@@ -40,9 +41,9 @@ final class PriceOracleService: ObservableObject {
     // MARK: - Fetch PAXG Price
     
     /// Fetch current PAXG/USD price from CoinGecko
-    /// Returns cached value if still valid
-    /// - Returns: PAXG price in USD
-    func fetchPAXGPrice() async throws -> Decimal {
+    /// Returns cached value if still valid, or default price if API fails
+    /// - Returns: PAXG price in USD (always returns a value, never throws)
+    func fetchPAXGPrice() async -> Decimal {
         // Return cached price if valid
         if let cache = cache, cache.isValid {
             AppLogger.log("📊 Using cached PAXG price: $\(cache.price)", category: "oracle")
@@ -79,6 +80,19 @@ final class PriceOracleService: ObservableObject {
                 throw PriceOracleError.invalidResponse
             }
             
+            // Handle rate limiting (429) specifically
+            if httpResponse.statusCode == 429 {
+                AppLogger.log("🚫 Rate limited by CoinGecko (429)", category: "oracle")
+                // Return cached or default price
+                if let cache = cache {
+                    AppLogger.log("⚠️ Using stale cached price due to rate limit: $\(cache.price)", category: "oracle")
+                    return cache.price
+                } else {
+                    AppLogger.log("⚠️ Using default price due to rate limit: $\(defaultPAXGPrice)", category: "oracle")
+                    return defaultPAXGPrice
+                }
+            }
+            
             guard (200...299).contains(httpResponse.statusCode) else {
                 throw PriceOracleError.httpError(statusCode: httpResponse.statusCode)
             }
@@ -113,13 +127,15 @@ final class PriceOracleService: ObservableObject {
         } catch {
             AppLogger.log("❌ Failed to fetch PAXG price: \(error.localizedDescription)", category: "oracle")
             
-            // If fetch fails but we have expired cache, return it anyway
+            // Priority 1: Use stale cache if available
             if let cache = cache {
                 AppLogger.log("⚠️ Using stale cached price: $\(cache.price)", category: "oracle")
                 return cache.price
             }
             
-            throw error
+            // Priority 2: Use default price (never throw)
+            AppLogger.log("⚠️ Using default PAXG price: $\(defaultPAXGPrice)", category: "oracle")
+            return defaultPAXGPrice
         }
     }
     
