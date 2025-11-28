@@ -76,7 +76,7 @@ struct MomDashboardView: View {
                     }
                 }
             }
-            .padding(.horizontal, 10)
+            .padding(.horizontal, 20)
             .padding(.bottom, 20)
         }
         .scrollIndicators(.hidden)
