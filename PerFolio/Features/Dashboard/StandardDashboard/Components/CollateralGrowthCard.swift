@@ -82,8 +82,8 @@ struct CollateralGrowthCard: View {
                         Image(systemName: "plus.circle.fill")
                             .font(.system(size: 18))
                         
-                        Text("Add More Gold to Increase Borrowing Power")
-                            .font(.system(size: 15, weight: .semibold))
+                        Text("Add More Gold")
+                            .font(.system(size: 16, weight: .semibold))
                         
                         Spacer()
                         
