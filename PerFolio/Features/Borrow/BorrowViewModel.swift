@@ -33,6 +33,7 @@ final class BorrowViewModel: ObservableObject {
     #if DEBUG
     @Published var showingWalletProviderSelection = false
     @Published var selectedWalletProvider: WalletProvider = .current
+    private var hasSelectedProvider = false
     #endif
     
     enum ViewState {
@@ -215,10 +216,18 @@ final class BorrowViewModel: ObservableObject {
     
     // MARK: - Execute Borrow
     
+    #if DEBUG
+    /// Mark that user has selected a wallet provider
+    func markProviderSelected() {
+        hasSelectedProvider = true
+        AppLogger.log("✅ Wallet provider selected: \(selectedWalletProvider.displayName)", category: "borrow")
+    }
+    #endif
+    
     func executeBorrow() async {
         // STEP 1: Check if dev mode is enabled - show wallet provider selection
         #if DEBUG
-        if UserPreferences.isDevModeEnabled && !showingWalletProviderSelection {
+        if UserPreferences.isDevModeEnabled && !hasSelectedProvider {
             // Show provider selection sheet first
             AppLogger.log("🔧 Dev mode active - showing wallet provider selection", category: "borrow")
             showingWalletProviderSelection = true
@@ -295,6 +304,9 @@ final class BorrowViewModel: ObservableObject {
     func resetTransaction() {
         transactionState = .idle
         showingTransactionModal = false
+        #if DEBUG
+        hasSelectedProvider = false  // Reset for next borrow
+        #endif
     }
     
     // MARK: - Helpers

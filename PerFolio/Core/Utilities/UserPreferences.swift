@@ -224,7 +224,12 @@ struct UserPreferences {
     static var isDevModeEnabled: Bool {
         get {
             #if DEBUG
-            return UserDefaults.standard.bool(forKey: Keys.isDevModeEnabled)
+            // Check if user has explicitly set a preference
+            if UserDefaults.standard.object(forKey: Keys.isDevModeEnabled) != nil {
+                return UserDefaults.standard.bool(forKey: Keys.isDevModeEnabled)
+            }
+            // Default: ENABLED
+            return true
             #else
             return false  // Force disable in production
             #endif

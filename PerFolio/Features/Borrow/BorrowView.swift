@@ -37,6 +37,8 @@ struct BorrowView: View {
             WalletProviderSelectionSheet(
                 selectedProvider: $viewModel.selectedWalletProvider,
                 onProceed: {
+                    // Mark that provider has been selected, then continue with borrow
+                    viewModel.markProviderSelected()
                     // Continue with borrow execution after provider selection
                     Task {
                         await viewModel.executeBorrow()
