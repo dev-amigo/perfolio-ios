@@ -85,27 +85,39 @@ struct CollateralGrowthCard: View {
                 Divider()
                     .background(themeManager.perfolioTheme.border)
                 
-                // Action
+                // Action Button
                 Button {
                     HapticManager.shared.medium()
                     onAddGold()
                 } label: {
-                    HStack(spacing: 8) {
+                    HStack(spacing: 10) {
                         Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 18))
+                            .font(.system(size: 20))
+                            .foregroundStyle(.white)
                         
                         Text("Add More Gold")
                             .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.white)
                         
                         Spacer()
                         
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 14))
+                        Image(systemName: "arrow.right.circle.fill")
+                            .font(.system(size: 20))
+                            .foregroundStyle(.white.opacity(0.8))
                     }
-                    .foregroundStyle(themeManager.perfolioTheme.tintColor)
-                    .padding(14)
-                    .background(themeManager.perfolioTheme.tintColor.opacity(0.15))
-                    .cornerRadius(12)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 16)
+                    .background(
+                        LinearGradient(
+                            colors: [
+                                themeManager.perfolioTheme.tintColor,
+                                themeManager.perfolioTheme.tintColor.opacity(0.8)
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .cornerRadius(14)
                 }
             }
             .padding(20)

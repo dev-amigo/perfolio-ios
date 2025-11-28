@@ -8,35 +8,33 @@ struct SafetyAlertsCard: View {
     
     var body: some View {
         if !alerts.isEmpty {
-            PerFolioCard {
-                VStack(alignment: .leading, spacing: 16) {
-                    // Header
-                    HStack(spacing: 8) {
-                        Image(systemName: "bell.fill")
-                            .font(.system(size: 12))
-                            .foregroundStyle(themeManager.perfolioTheme.tintColor)
-                        
-                        Text("Alerts")
-                            .font(.system(size: 20, weight: .semibold, design: .rounded))
-                            .foregroundStyle(themeManager.perfolioTheme.textPrimary)
-                        
-                        Spacer()
-                    }
+            VStack(alignment: .leading, spacing: 12) {
+                // Section Header
+                HStack(spacing: 8) {
+                    Image(systemName: "bell.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(themeManager.perfolioTheme.tintColor)
                     
-                    // Alerts List
-                    VStack(spacing: 12) {
-                        ForEach(alerts) { alert in
-                            alertBanner(alert)
-                        }
+                    Text("Alerts")
+                        .font(.system(size: 18, weight: .semibold, design: .rounded))
+                        .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                    
+                    Spacer()
+                }
+                .padding(.top, 8)
+                
+                // Alerts List (Simple Rows)
+                VStack(spacing: 12) {
+                    ForEach(alerts) { alert in
+                        alertRow(alert)
                     }
                 }
-                .padding(20)
             }
         }
     }
     
     @ViewBuilder
-    private func alertBanner(_ alert: SafetyAlert) -> some View {
+    private func alertRow(_ alert: SafetyAlert) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: alertIcon(for: alert.type))
                 .font(.system(size: 18, weight: .semibold))
@@ -49,9 +47,6 @@ struct SafetyAlertsCard: View {
             
             Spacer(minLength: 0)
         }
-        .padding(16)
-        .background(alertColor(for: alert.type).opacity(0.15))
-        .cornerRadius(12)
     }
     
     // MARK: - Helper Functions
