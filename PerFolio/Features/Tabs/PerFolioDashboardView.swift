@@ -5,9 +5,11 @@ struct PerFolioDashboardView: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @StateObject private var viewModel = DashboardViewModel()
     @StateObject private var onboardingViewModel = OnboardingViewModel()
+    @StateObject private var notificationManager = NotificationManager.shared
     @Environment(\.modelContext) private var modelContext
     @State private var showCopiedToast = false
     @State private var showSettings = false
+    @State private var showNotifications = false
     @State private var selectedTab: String = "dashboard"
     var onLogout: (() -> Void)?
     var onNavigateToTab: ((String) -> Void)?
@@ -54,9 +56,38 @@ struct PerFolioDashboardView: View {
                         .font(.system(size: 20, weight: .bold, design: .rounded))
                         .foregroundStyle(themeManager.perfolioTheme.textPrimary)
                 }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        HapticManager.shared.light()
+                        showNotifications = true
+                    } label: {
+                        ZStack(alignment: .topTrailing) {
+                            Image(systemName: "bell.fill")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                            
+                            if notificationManager.unreadCount > 0 {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.red)
+                                        .frame(width: 16, height: 16)
+                                    
+                                    Text("\(min(notificationManager.unreadCount, 9))")
+                                        .font(.system(size: 10, weight: .bold))
+                                        .foregroundStyle(.white)
+                                }
+                                .offset(x: 8, y: -8)
+                            }
+                        }
+                    }
+                }
             }
             .sheet(isPresented: $showSettings) {
                 SettingsView(onLogout: onLogout)
+            }
+            .sheet(isPresented: $showNotifications) {
+                NotificationCenterView(onNavigateToTab: onNavigateToTab)
             }
         }
         .overlay(alignment: .top) {

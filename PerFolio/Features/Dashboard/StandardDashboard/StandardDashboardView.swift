@@ -105,9 +105,6 @@ struct StandardDashboardView: View {
                 }
             )
             
-            // Section 7: Safety Alerts
-            SafetyAlertsCard(alerts: viewModel.activeAlerts)
-            
             // Bottom spacing
             Color.clear.frame(height: 20)
         }

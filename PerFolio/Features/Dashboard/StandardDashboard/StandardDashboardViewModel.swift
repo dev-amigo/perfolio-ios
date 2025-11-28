@@ -77,9 +77,6 @@ final class StandardDashboardViewModel: ObservableObject {
     @Published var totalInterest: String = "$0.00"
     @Published var repayAmount: String = "$0.00"
     
-    // Alerts
-    @Published var activeAlerts: [SafetyAlert] = []
-    
     // Loading State
     @Published var isLoading = true
     @Published var errorMessage: String?
@@ -89,6 +86,7 @@ final class StandardDashboardViewModel: ObservableObject {
     private let currencyService = CurrencyService.shared
     private let fluidVaultService = FluidVaultService()
     private let erc20Contract = ERC20Contract()
+    private let notificationManager = NotificationManager.shared
     private var cancellables = Set<AnyCancellable>()
     
     private var paxgPriceUSD: Decimal = 0
@@ -232,40 +230,34 @@ final class StandardDashboardViewModel: ObservableObject {
     }
     
     private func generateAlerts() {
-        activeAlerts.removeAll()
+        // Push alerts to NotificationManager instead of storing locally
         
-        // Price movement alert
-        if isPositiveChange {
-            activeAlerts.append(SafetyAlert(
-                type: .info,
-                message: "Your gold increased today by \(todayChange)"
-            ))
-        } else if todayChange != "$0.00" {
-            activeAlerts.append(SafetyAlert(
-                type: .caution,
-                message: "Your gold decreased today by \(todayChange)"
-            ))
+        // Price movement alert (only if significant)
+        if isPositiveChange && todayChange != "$0.00" {
+            notificationManager.addPriceChangeAlert(
+                message: "Your gold increased today by \(todayChange)",
+                isPositive: true
+            )
+        } else if !isPositiveChange && todayChange != "$0.00" {
+            notificationManager.addPriceChangeAlert(
+                message: "Your gold decreased today by \(todayChange)",
+                isPositive: false
+            )
         }
         
-        // Loan ratio alerts
-        if loanRatio >= 70 {
-            activeAlerts.append(SafetyAlert(
-                type: .warning,
-                message: "Loan ratio is \(loanRatioPercent)%. Add gold or repay to avoid liquidation."
-            ))
-        } else if loanRatio >= 40 {
-            activeAlerts.append(SafetyAlert(
-                type: .caution,
-                message: "Loan ratio reached \(loanRatioPercent)%. You are still safe but monitor the gold price."
-            ))
-        }
-        
-        // No borrowing alert
-        if borrowedAmountUSD == 0 {
-            activeAlerts.append(SafetyAlert(
-                type: .info,
-                message: "You have no active loans. Your gold is fully available."
-            ))
+        // Loan ratio alerts (only if user has loans)
+        if borrowedAmountUSD > 0 {
+            if loanRatio >= 70 {
+                notificationManager.addSafetyAlert(
+                    message: "Loan ratio is \(loanRatioPercent)%. Add gold or repay to avoid liquidation.",
+                    priority: loanRatio >= 85 ? .urgent : .high
+                )
+            } else if loanRatio >= 40 {
+                notificationManager.addSafetyAlert(
+                    message: "Loan ratio reached \(loanRatioPercent)%. You are still safe but monitor the gold price.",
+                    priority: .normal
+                )
+            }
         }
     }
     
@@ -311,7 +303,6 @@ final class StandardDashboardViewModel: ObservableObject {
         totalInterest = "$0.00"
         repayAmount = "$0.00"
         safetyStatus = .verySafe
-        activeAlerts = []
     }
 }
 
