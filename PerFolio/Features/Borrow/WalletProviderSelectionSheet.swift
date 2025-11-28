@@ -84,7 +84,7 @@ struct WalletProviderSelectionSheet: View {
                     // Icon
                     Image(systemName: provider.icon)
                         .font(.system(size: 28))
-                        .foregroundStyle(provider.supportsGasSponsorship ? Color.orange : themeManager.perfolioTheme.tintColor)
+                        .foregroundStyle(themeManager.perfolioTheme.tintColor)
                         .symbolRenderingMode(.hierarchical)
                         .frame(width: 44, height: 44)
                     
@@ -100,8 +100,16 @@ struct WalletProviderSelectionSheet: View {
                                     .font(.system(size: 11, weight: .medium))
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 3)
-                                    .background(provider.supportsGasSponsorship ? Color.orange.opacity(0.2) : themeManager.perfolioTheme.tintColor.opacity(0.2))
-                                    .foregroundStyle(provider.supportsGasSponsorship ? Color.orange : themeManager.perfolioTheme.tintColor)
+                                    .background(
+                                        provider == .privyEmbedded 
+                                            ? themeManager.perfolioTheme.success.opacity(0.2)
+                                            : Color.orange.opacity(0.2)
+                                    )
+                                    .foregroundStyle(
+                                        provider == .privyEmbedded
+                                            ? themeManager.perfolioTheme.success
+                                            : Color.orange
+                                    )
                                     .cornerRadius(4)
                             }
                         }
@@ -122,26 +130,26 @@ struct WalletProviderSelectionSheet: View {
                 }
                 .padding(16)
                 
-                // Gas Sponsorship Indicator
-                if provider.supportsGasSponsorship {
-                    Divider()
-                        .background(themeManager.perfolioTheme.border)
+                // Provider-specific note
+                Divider()
+                    .background(themeManager.perfolioTheme.border)
+                
+                HStack(spacing: 8) {
+                    Image(systemName: provider == .privyEmbedded ? "checkmark.shield.fill" : "exclamationmark.triangle.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(provider == .privyEmbedded ? themeManager.perfolioTheme.success : Color.orange)
                     
-                    HStack(spacing: 8) {
-                        Image(systemName: "sparkles")
-                            .font(.system(size: 14))
-                            .foregroundStyle(Color.orange)
-                        
-                        Text("Gas fees sponsored by Alchemy")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(Color.orange)
-                        
-                        Spacer()
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(Color.orange.opacity(0.1))
+                    Text(provider == .privyEmbedded 
+                        ? "Recommended for production use" 
+                        : "For testing only - requires ETH for gas")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(provider == .privyEmbedded ? themeManager.perfolioTheme.success : Color.orange)
+                    
+                    Spacer()
                 }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background((provider == .privyEmbedded ? themeManager.perfolioTheme.success : Color.orange).opacity(0.1))
             }
             .background(themeManager.perfolioTheme.secondaryBackground)
             .cornerRadius(16)

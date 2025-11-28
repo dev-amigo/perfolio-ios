@@ -42,71 +42,6 @@ final class AlchemyAAService {
     
     // MARK: - Public Methods
     
-    /// Send a gas-sponsored transaction using Alchemy
-    /// 
-    /// **Flow:**
-    /// 1. Estimate gas for the transaction
-    /// 2. Get gas price from network
-    /// 3. Send transaction with sponsorship parameters
-    /// 4. Return transaction hash
-    /// 
-    /// - Parameters:
-    ///   - to: Destination address
-    ///   - data: Transaction data (encoded function call)
-    ///   - value: ETH value to send (hex string)
-    ///   - from: Sender address
-    /// - Returns: Transaction hash
-    func sendSponsoredTransaction(
-        to: String,
-        data: String,
-        value: String,
-        from: String
-    ) async throws -> String {
-        AppLogger.log("🚀 Preparing sponsored transaction via Alchemy AA", category: "alchemy")
-        AppLogger.log("   From: \(from)", category: "alchemy")
-        AppLogger.log("   To: \(to)", category: "alchemy")
-        AppLogger.log("   Data: \(data.prefix(66))...", category: "alchemy")
-        AppLogger.log("   Value: \(value)", category: "alchemy")
-        
-        // STEP 1: Estimate gas
-        let gasEstimate = try await estimateGas(
-            from: from,
-            to: to,
-            data: data,
-            value: value
-        )
-        AppLogger.log("⛽ Gas estimate: \(gasEstimate)", category: "alchemy")
-        
-        // STEP 2: Get current gas price
-        let gasPrice = try await getGasPrice()
-        AppLogger.log("💰 Gas price: \(gasPrice)", category: "alchemy")
-        
-        // STEP 3: Build transaction request
-        var txParams: [String: Any] = [
-            "from": from,
-            "to": to,
-            "data": data,
-            "value": value,
-            "gas": gasEstimate,
-            "gasPrice": gasPrice
-        ]
-        
-        // STEP 4: Add sponsorship parameters if policy ID is available
-        if let policyId = policyId {
-            txParams["paymasterAndData"] = buildPaymasterData(policyId: policyId)
-            AppLogger.log("✨ Added paymaster data for sponsorship", category: "alchemy")
-        }
-        
-        // STEP 5: Send transaction
-        AppLogger.log("📤 Sending sponsored transaction...", category: "alchemy")
-        let txHash = try await sendTransaction(params: txParams)
-        
-        AppLogger.log("✅ Transaction sent: \(txHash)", category: "alchemy")
-        AppLogger.log("   View on Etherscan: https://etherscan.io/tx/\(txHash)", category: "alchemy")
-        
-        return txHash
-    }
-    
     /// Get transaction receipt
     func getTransactionReceipt(_ txHash: String) async throws -> TransactionReceipt {
         AppLogger.log("🔍 Fetching receipt for: \(txHash)", category: "alchemy")
@@ -146,10 +81,10 @@ final class AlchemyAAService {
         throw AlchemyError.confirmationTimeout
     }
     
-    // MARK: - Private RPC Methods
+    // MARK: - Public RPC Methods
     
     /// Estimate gas for transaction
-    private func estimateGas(
+    func estimateGas(
         from: String,
         to: String,
         data: String,
@@ -179,7 +114,7 @@ final class AlchemyAAService {
     }
     
     /// Get current gas price
-    private func getGasPrice() async throws -> String {
+    func getGasPrice() async throws -> String {
         let result = try await rpcCall(method: "eth_gasPrice", params: [])
         guard let gasPriceHex = result as? String else {
             throw AlchemyError.invalidResponse
@@ -187,15 +122,19 @@ final class AlchemyAAService {
         return gasPriceHex
     }
     
-    /// Send transaction to network
-    private func sendTransaction(params: [String: Any]) async throws -> String {
-        let rpcParams: [Any] = [params]
-        let result = try await rpcCall(method: "eth_sendTransaction", params: rpcParams)
+    /// Send raw signed transaction to network
+    /// This is used after Privy signs the transaction
+    func sendRawTransaction(_ signedTx: String) async throws -> String {
+        AppLogger.log("📤 Broadcasting signed transaction via Alchemy...", category: "alchemy")
+        
+        let rpcParams: [Any] = [signedTx]
+        let result = try await rpcCall(method: "eth_sendRawTransaction", params: rpcParams)
         
         guard let txHash = result as? String else {
             throw AlchemyError.invalidResponse
         }
         
+        AppLogger.log("✅ Transaction broadcasted: \(txHash)", category: "alchemy")
         return txHash
     }
     

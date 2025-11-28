@@ -508,44 +508,32 @@ class FluidVaultService: ObservableObject {
         let value: String
     }
     
-    /// Send transaction via Alchemy Account Abstraction (gas-sponsored)
+    /// Send transaction via Alchemy option (Currently uses Privy standard flow)
     /// Only available in DEBUG builds with dev mode enabled
+    /// 
+    /// **Note:** True Alchemy AA with gas sponsorship requires their SDK.
+    /// For now, this uses the same Privy flow as the standard option.
+    /// This is primarily for testing/comparing different RPC providers.
     private func sendAlchemyAATransaction(_ request: TransactionRequest) async throws -> String {
-        AppLogger.log("🌟 Sending via Alchemy AA with gas sponsorship", category: "fluid")
+        AppLogger.log("🌟 Alchemy option selected (using Privy standard flow)", category: "fluid")
+        AppLogger.log("💡 True AA with gas sponsorship requires Alchemy SDK integration", category: "fluid")
         
-        // Get Alchemy API key from bundle
-        guard let alchemyAPIKey = Bundle.main.object(forInfoDictionaryKey: "AGAlchemyAPIKey") as? String,
-              !alchemyAPIKey.isEmpty else {
-            throw FluidVaultError.transactionFailed("Alchemy API key not configured")
+        // Get Privy user and wallet
+        let authCoordinator = PrivyAuthCoordinator.shared
+        let authState = await authCoordinator.resolvedAuthState()
+        
+        guard case .authenticated(let user) = authState else {
+            AppLogger.log("❌ User not authenticated", category: "fluid")
+            throw FluidVaultError.transactionFailed("User not authenticated")
         }
         
-        AppLogger.log("✅ Alchemy API key found", category: "fluid")
+        guard let wallet = user.embeddedEthereumWallets.first else {
+            throw FluidVaultError.transactionFailed("No embedded wallet found")
+        }
         
-        // Initialize Alchemy AA Service
-        let alchemyService = AlchemyAAService(
-            apiKey: alchemyAPIKey,
-            network: "eth-mainnet"
-        )
-        
-        AppLogger.log("📤 Sending transaction with gas sponsorship...", category: "fluid")
-        AppLogger.log("   From: \(request.from)", category: "fluid")
-        AppLogger.log("   To: \(request.to)", category: "fluid")
-        AppLogger.log("   Value: \(request.value)", category: "fluid")
-        AppLogger.log("   Data: \(request.data.prefix(66))...", category: "fluid")
-        
-        // Send sponsored transaction
-        let txHash = try await alchemyService.sendSponsoredTransaction(
-            to: request.to,
-            data: request.data,
-            value: request.value,
-            from: request.from
-        )
-        
-        AppLogger.log("✅ Alchemy AA transaction submitted: \(txHash)", category: "fluid")
-        AppLogger.log("   View on Etherscan: https://etherscan.io/tx/\(txHash)", category: "fluid")
-        AppLogger.log("   Gas was sponsored by Alchemy", category: "fluid")
-        
-        return txHash
+        // Use the standard Privy provider flow
+        // This DOES support gas sponsorship if Privy policies are configured
+        return try await sendProviderTransaction(request: request, wallet: wallet)
     }
     
     private func sendProviderTransaction(

@@ -2,9 +2,12 @@ import Foundation
 
 /// Wallet providers for signing blockchain transactions
 /// 
-/// Supports multiple wallet implementations to enable different features:
-/// - Privy: Default embedded wallet (standard transactions)
-/// - Alchemy AA: Account Abstraction with gas sponsorship (dev mode only)
+/// Supports multiple wallet options:
+/// - Privy: Standard embedded wallet (production ready)
+/// - Alchemy: Alternative RPC provider for testing (dev mode only)
+/// 
+/// **Note:** Both options currently use Privy's embedded wallet for signing.
+/// True Alchemy AA with gas sponsorship requires their SDK (future enhancement).
 enum WalletProvider: String, CaseIterable, Identifiable {
     case privyEmbedded = "privy"
     case alchemyAA = "alchemy"
@@ -17,7 +20,7 @@ enum WalletProvider: String, CaseIterable, Identifiable {
         case .privyEmbedded:
             return "Privy Embedded Wallet"
         case .alchemyAA:
-            return "Alchemy Account Abstraction"
+            return "Alchemy RPC (Testing)"
         }
     }
     
@@ -25,9 +28,9 @@ enum WalletProvider: String, CaseIterable, Identifiable {
     var description: String {
         switch self {
         case .privyEmbedded:
-            return "Default wallet powered by Privy SDK"
+            return "Production-ready embedded wallet"
         case .alchemyAA:
-            return "Gas-sponsored transactions via Alchemy"
+            return "Alternative RPC for testing (requires user ETH for gas)"
         }
     }
     
@@ -37,17 +40,18 @@ enum WalletProvider: String, CaseIterable, Identifiable {
         case .privyEmbedded:
             return "lock.shield.fill"
         case .alchemyAA:
-            return "sparkles"
+            return "network"
         }
     }
     
     /// Whether this provider supports gas sponsorship
+    /// Note: Both use Privy, so gas sponsorship depends on Privy policy configuration
     var supportsGasSponsorship: Bool {
         switch self {
         case .privyEmbedded:
-            return false
+            return true  // Via Privy policies
         case .alchemyAA:
-            return true
+            return true  // Via Privy policies (same as standard)
         }
     }
     
@@ -65,13 +69,13 @@ enum WalletProvider: String, CaseIterable, Identifiable {
         }
     }
     
-    /// Badge text (e.g., "Sponsored", "Default")
+    /// Badge text (e.g., "Production", "Testing")
     var badge: String? {
         switch self {
         case .privyEmbedded:
-            return "Default"
+            return "Production"
         case .alchemyAA:
-            return "Gas Sponsored"
+            return "Testing"
         }
     }
     
