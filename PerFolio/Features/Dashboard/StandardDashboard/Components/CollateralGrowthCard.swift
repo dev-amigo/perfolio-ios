@@ -26,14 +26,26 @@ struct CollateralGrowthCard: View {
                 }
                 
                 // Info banner
-                HStack(spacing: 8) {
-                    Image(systemName: "info.circle.fill")
-                        .font(.system(size: 14))
-                        .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "info.circle.fill")
+                            .font(.system(size: 14))
+                            .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                        
+                        Text("More gold = More borrowing power")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                    }
                     
-                    Text("More gold = More borrowing power")
-                        .font(.system(size: 14))
-                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                    HStack(spacing: 8) {
+                        Image(systemName: "chart.line.uptrend.xyaxis")
+                            .font(.system(size: 14))
+                            .foregroundStyle(themeManager.perfolioTheme.success)
+                        
+                        Text("Gold price increases → Your collateral value increases too!")
+                            .font(.system(size: 13))
+                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                    }
                 }
                 .padding(12)
                 .background(themeManager.perfolioTheme.tintColor.opacity(0.1))
