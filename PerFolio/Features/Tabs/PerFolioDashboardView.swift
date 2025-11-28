@@ -27,7 +27,7 @@ struct PerFolioDashboardView: View {
                     case .regular:
                         regularDashboardContent
                     case .standard:
-                        StandardDashboardView()
+                        StandardDashboardView(onNavigateToTab: onNavigateToTab)
                     case .simplified:
                         momDashboardContent
                     }

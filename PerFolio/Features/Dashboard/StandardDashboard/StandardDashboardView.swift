@@ -4,7 +4,7 @@ import SwiftUI
 struct StandardDashboardView: View {
     @StateObject private var viewModel = StandardDashboardViewModel()
     @EnvironmentObject private var themeManager: ThemeManager
-    @State private var selectedTab: Int = 0
+    var onNavigateToTab: ((String) -> Void)?
     
     var body: some View {
         ScrollView {
@@ -17,7 +17,7 @@ struct StandardDashboardView: View {
                     contentView
                 }
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, 10)
             .padding(.vertical, 24)
         }
         .background(themeManager.perfolioTheme.primaryBackground.ignoresSafeArea())
@@ -51,20 +51,29 @@ struct StandardDashboardView: View {
                 goldPrice: viewModel.goldPriceUserCurrency
             )
             
-            // Section 2: Borrowing Overview (Your Loan) - Only if user has borrowed
+            // Section 2: Collateral Growth & Borrowing Power
+            CollateralGrowthCard(
+                currentCollateral: viewModel.collateralValueUserCurrency,
+                paxgBalance: viewModel.paxgBalance,
+                availableToBorrow: viewModel.availableToBorrow,
+                onAddGold: {
+                    onNavigateToTab?("wallet")
+                }
+            )
+            
+            // Section 3: Borrowing Overview (Your Loan) - Only if user has borrowed
             if viewModel.borrowedAmount != "$0.00" {
                 BorrowingOverviewCard(
                     borrowedAmount: viewModel.borrowedAmount,
                     totalOwed: viewModel.totalOwed,
                     interestRate: viewModel.interestRate,
                     onRepayTap: {
-                        // Navigate to repay or deposit view
-                        selectedTab = 1 // Wallet tab
+                        onNavigateToTab?("wallet")
                     }
                 )
             }
             
-            // Section 3: Loan Safety - Only if user has borrowed
+            // Section 4: Loan Safety - Only if user has borrowed
             if viewModel.borrowedAmount != "$0.00" {
                 LoanSafetyCard(
                     loanRatioPercent: viewModel.loanRatioPercent,
@@ -73,34 +82,30 @@ struct StandardDashboardView: View {
                 )
             }
             
-            // Section 4: Available to Borrow
+            // Section 5: Available to Borrow
             AvailableToBorrowCard(
                 availableAmount: viewModel.availableToBorrow,
                 onBorrowTap: {
-                    // Navigate to borrow view
-                    selectedTab = 2 // Loans tab
+                    onNavigateToTab?("loans")
                 }
             )
             
-            // Section 5: Quick Actions
+            // Section 6: Quick Actions
             sectionHeader(title: "Quick Actions", icon: "bolt.fill")
             
             QuickActionsCard(
                 onBorrowMore: {
-                    // Navigate to borrow view
-                    selectedTab = 2 // Loans tab
+                    onNavigateToTab?("loans")
                 },
                 onAddGold: {
-                    // Navigate to deposit view
-                    selectedTab = 1 // Wallet tab
+                    onNavigateToTab?("wallet")
                 },
                 onRepayLoan: {
-                    // Navigate to repay view
-                    selectedTab = 1 // Wallet tab
+                    onNavigateToTab?("wallet")
                 }
             )
             
-            // Section 6: Safety Alerts
+            // Section 7: Safety Alerts
             SafetyAlertsCard(alerts: viewModel.activeAlerts)
             
             // Bottom spacing
