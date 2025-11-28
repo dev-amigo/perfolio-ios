@@ -92,10 +92,10 @@ struct PerFolioTheme {
     
     // MARK: - Metal Dark Theme (Cool Tones)
     static let metalDark = PerFolioTheme(
-        primaryBackground: Color(hex: "1A1D21"),      // Dark Blue-Gray
-        secondaryBackground: Color(hex: "21252B"),    // Slightly Lighter Blue-Gray
-        tintColor: Color(hex: "D0B070"),
-        buttonBackground: Color(hex: "9D7618"),
+        primaryBackground: Color(hex: "121315"),      // RGB(18, 19, 21) - Deep metallic dark
+        secondaryBackground: Color(hex: "16181A"),    // RGB(22, 24, 26) - Surface layer
+        tintColor: Color(hex: "D0B070"),              // Goldish tint (always)
+        buttonBackground: Color(hex: "2F343A"),       // RGB(47, 52, 58) - Button surface
         goldenBoxGradient: LinearGradient(
             colors: [Color(hex: "D0B070"), Color(hex: "B88A3C")],
             startPoint: .topLeading,
