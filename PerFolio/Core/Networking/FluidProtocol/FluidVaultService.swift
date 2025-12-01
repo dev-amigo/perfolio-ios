@@ -329,7 +329,19 @@ class FluidVaultService: ObservableObject {
     ) async throws -> String {
         let functionSelector = "0x095ea7b3"
         let cleanSpender = spender.replacingOccurrences(of: "0x", with: "").paddingLeft(to: 64, with: "0")
-        let amountHex = try encodeUnsignedQuantity(amount, decimals: decimals)
+        
+        // Handle infinite approval specially (MAX_UINT256)
+        // Don't scale by decimals - MAX_UINT256 is already the raw value
+        let amountHex: String
+        if amount == Constants.maxUint256 {
+            // Infinite approval: 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+            amountHex = String(repeating: "f", count: 64)
+            AppLogger.log("📝 Using infinite approval: MAX_UINT256", category: "fluid")
+        } else {
+            // Normal approval: scale by decimals
+            amountHex = try encodeUnsignedQuantity(amount, decimals: decimals)
+        }
+        
         let txData = "0x" + functionSelector.replacingOccurrences(of: "0x", with: "") + cleanSpender + amountHex
         AppLogger.log("📝 Approve transaction data: \(txData.prefix(100))...", category: "fluid")
         return try await sendTransaction(
